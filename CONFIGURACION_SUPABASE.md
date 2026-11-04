@@ -6,7 +6,7 @@ Guía para el propietario del proyecto. Nada de esto se ha aplicado todavía en 
 
 ## 1. Orden de las migraciones
 
-Se pegan en **SQL Editor → New query → Run**, una por una y en este orden. Todas son **aditivas** (no borran datos, no reinician el progreso) y se pueden ejecutar más de una vez.
+Se pegan en **SQL Editor → New query → Run**, una por una y en este orden. Todas son **aditivas** (no borran datos, no reinician el progreso). Las 003 a 008 se pueden repetir sin problema. **No repitas la 001 ni la 002 si ya las aplicaste**: no hace falta, y la versión antigua de la 001 daba el error «policy already exists» (inofensivo).
 
 | # | Archivo | Qué hace | Depende de | Notas |
 |---|---|---|---|---|

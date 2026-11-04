@@ -125,4 +125,11 @@ const setf=(e,p)=>ev(`document.querySelector("#cE").value=${JSON.stringify(e)};$
  await ev(`cout()`);await sleep(100);
  setf("a@b.com","password1");ev(`cgo("i")`);await sleep(300);
  ok("sin factor vuelve a entrar solo con contraseña",!w.document.querySelector("#cM")&&ev(`AU`)!==null);
+ // ===== límite de tamaño de progress (2 MB en el servidor) =====
+ ev(`S.hist=Array.from({length:40000},(_,i)=>"pregunta de relleno número "+i+" "+"x".repeat(60));HSs.clear();S.hist.forEach(k=>HSs.add(k));HIm=null;S.hd={"g:1":S.hist.slice()}`);
+ const big=JSON.stringify(JSON.parse(ev(`JSON.stringify(S)`))).length;
+ const pushed=await ev(`cpush()`);
+ const size=JSON.stringify(db.rows.u1.data).length;
+ ok("progreso enorme ("+Math.round(big/1e6*10)/10+" MB): la copia que se sube cabe en 2 MB",big>2e6&&pushed===true&&size<2e6&&size>1000);
+ ok("lo local no se recorta, solo la copia subida",ev(`S.hist.length`)==40000&&db.rows.u1.data.hist.length<40000&&db.rows.u1.data.hist.length>=500);
  console.log(out.join("\n"));console.log("ERRORES JS:",errs.length);errs.forEach(e=>console.log(e));process.exit(out.some(x=>x.startsWith("FALLO"))||errs.length?1:0)})();

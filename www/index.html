@@ -1258,12 +1258,17 @@ function cmerge(c){c=cleanS(c);const m={},mx=(a,b)=>Math.max(a||0,b||0),u=(a,b)=
  Object.assign(S,m);S.v=2;S.hist=S.hist||[];HIm=null;HSs.clear();S.hist.forEach(x=>HSs.add(x));for(const k in S.hd)HSd[k]=new Set(S.hd[k]);save()}
 async function cpush(){clearTimeout(ctm);ctm=0;if(!AU||!SBon())return false;
  try{const t=await tok(),now=new Date().toISOString(),up=(p,b)=>sbf(p,{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(b)},t);
-  await up("/rest/v1/progress?on_conflict=user_id",{user_id:AU.id,data:S,updated_at:now});
+  await up("/rest/v1/progress?on_conflict=user_id",{user_id:AU.id,data:cdata(),updated_at:now});
   // Perfil (migración 002). Si aún no existe la tabla, se ignora el error.
   try{await up("/rest/v1/profiles?on_conflict=id",{id:AU.id,display_name:(S.name&&S.name!="·")?S.name:null,updated_at:now})}catch(e){}
   // XP y estadísticas: el servidor es la autoridad (migración 003); aquí solo se envían los eventos.
   xflush(t);
   return true}catch(e){return false}}
+// La tabla progress limita data a 2 MB. Con el historial anti-repetición muy largo (hasta 40.000 entradas) se podría
+// superar y la subida fallaría para siempre: se sube una COPIA con el historial más antiguo recortado; lo local no cambia.
+const CMAX=1.2e6;
+function cdata(){let j=JSON.stringify(S);if(j.length<=CMAX)return S;const c=JSON.parse(j);let k=(c.hist||[]).length;
+ while(JSON.stringify(c).length>CMAX&&k>500){k=Math.floor(k*.7);c.hist=(c.hist||[]).slice(-k);for(const q in (c.hd||{}))c.hd[q]=c.hd[q].slice(-k)}return c}
 // ===== XP validado en el servidor =====
 // Cada recompensa se guarda como evento en una cola local (sobrevive sin conexión) y se envía a award_xp.
 const XQK="bitty_xq",xev=()=>{try{const a=JSON.parse(localStorage.getItem(XQK)||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}},xevs=a=>{try{localStorage.setItem(XQK,JSON.stringify(a.slice(-500)))}catch(e){}};

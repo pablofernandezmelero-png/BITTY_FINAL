@@ -2,83 +2,111 @@
 
 App educativa de informática (español, inglés y neerlandés). Una sola página web (`www/index.html`) empaquetada como app Android con Capacitor.
 
-> Estado: **en desarrollo**. Lo que está terminado y lo que falta está en [Estado del proyecto](#estado-del-proyecto).
+> Estado: **en desarrollo**. Lo hecho, lo simulado y lo pendiente están en [Estado del proyecto](#estado-del-proyecto).
 
 ## Estructura
 
 | Ruta | Qué es |
 |---|---|
 | `www/index.html` | La aplicación completa (HTML + CSS + JS). |
+| `content/questions-extra.js` | Preguntas ampliadas (fuente). `node tools/build-questions.js` las inserta en el HTML. |
+| `tools/` | `build-questions.js` (inserta preguntas) y `export-content.js` (genera la migración 006). |
 | `android/` | Proyecto Android generado por Capacitor. |
-| `supabase/migrations/` | Migraciones SQL versionadas de la base de datos. |
+| `supabase/migrations/` | Migraciones SQL versionadas (001–006). |
 | `tests/` | Pruebas automáticas (`npm test`). |
-| `.github/workflows/android.yml` | Compilación de la APK en GitHub Actions. |
+| `.github/workflows/` | `android.yml` (APK de depuración), `android-release.yml` (firmado, manual), `pages.yml` (web). |
 
-## Compilar la APK con GitHub Actions
-
-1. Abre el repositorio en GitHub → pestaña **Actions**.
-2. Elige **Build Android APK** → **Run workflow**.
-3. Espera a que termine (unos minutos). Antes de compilar se ejecutan las pruebas; si fallan, no se genera APK.
-4. Entra en la ejecución terminada y descarga **Bitty-debug-apk** desde *Artifacts*.
-5. Instala `app-debug.apk` en el móvil (hay que permitir «instalar apps desconocidas»).
-
-La APK es de **depuración** (firmada con la clave de prueba de Android). Sirve para probar, **no** para publicar en Google Play.
-
-## Desarrollo local
-
-Requisitos: Node 22 o superior.
+## Pruebas
 
 ```bash
 npm ci
-npm test            # pruebas automáticas
-npx cap sync android
+npm test
 ```
 
-Para compilar en local además hacen falta JDK 21 y el SDK de Android. En Windows, Gradle falla si el proyecto está en una ruta muy larga: usa una carpeta corta (por ejemplo `C:\bitty`).
+Ejecuta: banco de preguntas (incluye **ejecutar** el código de las preguntas de Python y JavaScript), recorrido del juego, nube/2FA con un servidor simulado, **migraciones SQL en un PostgreSQL real embebido (PGlite)**, contenido y comportamiento Android (botón atrás, anuncios, conexión) con Capacitor simulado. Si algo falla, `npm test` termina con error y los workflows no generan APK ni publican.
+
+> Qué demuestran y qué no: PGlite es PostgreSQL real, así que RLS, permisos y funciones SQL se prueban de verdad. Pero **no** es Supabase (no prueba GoTrue, correo, MFA real ni la red). Eso solo se comprueba con una cuenta real; ver abajo.
+
+## Compilar la APK
+
+- **Depuración** (para probar): GitHub → Actions → **Build Android APK** → Run workflow → descarga `Bitty-debug-apk`. Se firma con la clave de prueba de Android; **no sirve para Google Play**.
+- **Release firmada** (para publicar): GitHub → Actions → **Build Android Release (firmado)**. Necesita estos *Secrets* en Settings → Secrets and variables → Actions (si falta alguno, el workflow se detiene con un mensaje claro y no genera nada):
+
+  | Secret | Qué es |
+  |---|---|
+  | `BITTY_KEYSTORE_BASE64` | Tu archivo `.jks` en base64 |
+  | `BITTY_KEYSTORE_PASSWORD` | Contraseña del keystore |
+  | `BITTY_KEY_ALIAS` | Alias de la clave |
+  | `BITTY_KEY_PASSWORD` | Contraseña de la clave |
+
+  Crear el keystore (una sola vez, guárdalo a buen recaudo: si lo pierdes no podrás actualizar la app en Play):
+
+  ```bash
+  keytool -genkeypair -v -keystore bitty-release.jks -alias bitty -keyalg RSA -keysize 2048 -validity 10000
+  base64 -w0 bitty-release.jks      # pega el resultado en BITTY_KEYSTORE_BASE64
+  ```
+
+  **Nunca** subas el `.jks` ni las contraseñas al repositorio (`.gitignore` ya excluye `*.jks` y `*.keystore`).
+
+Local: Node 22, JDK 21 y el SDK de Android. En Windows, Gradle falla con rutas largas: usa una carpeta corta (`C:\bitty`).
 
 ## Supabase
 
-El proyecto usa Supabase para cuentas y sincronización. La URL y la clave **pública** (`sb_publishable_…`) están en `www/index.html` (constante `SB`); la clave pública está pensada para ir en el cliente y la seguridad real la dan las reglas RLS de la base de datos.
+La URL y la clave **pública** (`sb_publishable_…`) están en `www/index.html` (constante `SB`); la seguridad real la dan las reglas RLS. **Nunca** pongas en el repositorio ni en el cliente la clave `service_role`/`secret`.
 
-**Nunca** pongas en el repositorio ni en el cliente la clave `service_role` / `secret`, contraseñas de la base de datos ni tokens.
+### Migraciones (se aplican a mano en Supabase → SQL Editor, en este orden)
 
-### Aplicar las migraciones
+| # | Archivo | Qué hace |
+|---|---|---|
+| 1 | `…001_progress.sql` | Tabla `progress` + RLS |
+| 2 | `…002_profiles_stats.sql` | `profiles` y `stats` + RLS + trigger de perfil |
+| 3 | `…003_mfa_aal.sql` | Exige AAL2 (código 2FA) a las cuentas con 2FA activado |
+| 4 | `…004_secure_xp.sql` | XP validado en el servidor (`award_xp`, `import_legacy_stats`, `xp_events`); `stats` pasa a solo lectura |
+| 5 | `…005_content_schema.sql` | Tablas de contenido (cursos, categorías, lecciones, ejercicios, preguntas, respuestas), lectura pública |
+| 6 | `…006_content_seed.sql` | Carga las 1.144 preguntas y 212 lecciones actuales (idempotente, ~830 KB) |
 
-Hasta que se configure la CLI de Supabase, se aplican a mano en el panel de Supabase → **SQL Editor**, en orden:
+Todas son **aditivas**: no borran datos ni reinician el progreso. La 004 conserva el XP existente como `base_xp`. Es seguro desplegar la web antes o después de aplicarlas: sin la 004 el XP se queda en local y se envía cuando exista.
 
-1. `20261104000001_progress.sql`
-2. `20261104000002_profiles_stats.sql`
+### Ajustes del panel (no se pueden hacer desde el código)
 
-Las migraciones son **aditivas**: no borran ni modifican datos existentes. Las nuevas migraciones siguen el patrón `AAAAMMDDHHMMSS_nombre.sql`.
+1. **Authentication → URL Configuration**: *Site URL* = `https://pablofernandezmelero-png.github.io/BITTY_FINAL/` y esa misma dirección en *Redirect URLs*. Sin esto, los enlaces del correo (confirmar, recuperar contraseña, enlace mágico) apuntan a `localhost`.
+2. **Authentication → Sign In / Providers → Multi-Factor**: activar **TOTP** (Enroll y Verify) para que funcione el 2FA.
+3. Opcional: SMTP propio (el correo por defecto de Supabase tiene un límite bajo de envíos por hora).
 
-### Ajustes en el panel de Supabase
+## Anuncios (AdMob)
 
-- **Authentication → URL Configuration**: *Site URL* y *Redirect URLs* con la dirección donde se aloje la web (necesario para los enlaces de los correos).
-- **Authentication → Sign In / Providers → Email**: decidir si se exige confirmar el email.
+Código listo con **IDs de prueba oficiales de Google** (`ADS` en `www/index.html` y `BITTY_ADMOB_APP_ID` en `android/app/build.gradle`). Banner solo en el inicio, bonus con vídeo recompensado (3 al día), consentimiento RGPD (UMP) y **nunca** durante niveles, jefes, retos ni pantallas de resultado.
+
+Para producción (necesitas cuenta de Google AdMob): crea la app y las unidades de anuncio, pon tus IDs en `ADS.banner` / `ADS.rewarded`, cambia `ADS.test` a `false` y define el secreto `BITTY_ADMOB_APP_ID` (ID de aplicación, formato `ca-app-pub-…~…`). No uses anuncios reales hasta tener tu cuenta.
 
 ## Estado del proyecto
 
-Hecho y probado con simulaciones (no con usuarios reales):
-
-- Pantalla de bienvenida: iniciar sesión, crear cuenta, enlace mágico, invitado.
-- Recuperación y cambio de contraseña.
-- Sincronización del progreso (fusión sin pérdidas) con tablas `progress`, `profiles` y `stats` protegidas con RLS.
-- Banco de preguntas: 1.029 preguntas fijas y 74 generadores, con sistema anti-repetición.
-- Pruebas automáticas y workflow de compilación.
-
-Pendiente:
-
-- 2FA (TOTP) con niveles AAL1/AAL2.
-- XP y progreso validados en el servidor (ahora el cliente puede escribir sus propias estadísticas).
-- Ampliar el banco de preguntas.
-- Anuncios (AdMob) con identificadores de prueba.
-- Firma de release y publicación en Google Play.
+| Área | Estado | Cómo se comprobó |
+|---|---|---|
+| Web publicada y APK de depuración | Hecho | Workflows en GitHub; web idéntica al repositorio |
+| Conexión con Supabase y RLS de `progress`/`profiles`/`stats` | **Comprobado en el servicio real** | Lecturas/escrituras anónimas con la clave pública |
+| Registro, login, recuperación, sesiones, sincronización | Simulación | Servidor simulado; **falta probar con una cuenta real** |
+| XP validado en servidor (migración 004) | Probado en PostgreSQL real; **sin aplicar aún en tu proyecto** | `tests/sql.test.js` |
+| 2FA TOTP (cliente + AAL2 en servidor) | Simulación (TOTP real, GoTrue simulado) + SQL real; **falta activar MFA y probar con Authenticator** | `tests/cloud.test.js`, `tests/sql.test.js` |
+| Banco de preguntas (+115, 1.144 fijas + 74 generadores) | Hecho y verificado | `tests/bank.test.js` (código ejecutado, 0 duplicados) |
+| Base de datos de contenido (005/006) | Probada en PostgreSQL real; **sin aplicar aún** | `tests/content.test.js` |
+| Anuncios | Simulación con IDs de prueba; **no probado en un móvil** | `tests/android.test.js` |
+| Botón atrás, aviso sin conexión, sin copias de seguridad | Simulación; **no probado en un móvil** | `tests/android.test.js` |
+| Firma de release y Google Play | Preparado; **faltan keystore y cuenta de Play** | — |
 
 ## Credenciales y servicios externos que faltan
 
 | Servicio | Para qué | Estado |
 |---|---|---|
-| Supabase | Cuentas y datos | Proyecto creado; falta activar MFA/TOTP y configurar URL del sitio |
-| Google AdMob | Anuncios | **Sin cuenta**: se usarán identificadores de prueba de Google |
+| Supabase (panel) | URL del sitio, MFA/TOTP, aplicar migraciones 003–006 | Lo haces tú (ver arriba) |
+| Google AdMob | IDs reales de anuncios | **Sin cuenta**: se usan IDs de prueba |
 | Google Play Console | Publicar | **Sin cuenta** (pago único de 25 USD) |
-| Clave de firma de release | Firmar la APK/AAB final | **Sin crear**: se guardará como *GitHub Secret*, nunca en el repo |
+| Keystore de release | Firmar la APK/AAB | **Sin crear**: se guarda como *GitHub Secrets*, nunca en el repo |
+
+## Limitaciones conocidas
+
+- Sin códigos de recuperación de 2FA (Supabase no los ofrece): conviene registrar un segundo dispositivo. Si se pierde el único, se resetea desde el panel (Authentication → Users).
+- La importación del progreso local al crear cuenta (`import_legacy_stats`) se acepta **una vez** y con tope (20.000 XP): es la única parte basada en confianza.
+- La racha dentro de `progress.data` sigue siendo del cliente; la racha y el XP **protegidos** son los de `stats`.
+- La sesión se guarda en el almacenamiento local de la app (privado de la app, sin copias de seguridad). Un almacén cifrado por el sistema (Keystore) requeriría un plugin nativo adicional.
+- La APK incluye la web empaquetada: para actualizarla hay que compilar una APK nueva (Actions). La web de GitHub Pages sí se actualiza sola al hacer `push`.

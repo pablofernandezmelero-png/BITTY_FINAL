@@ -8,7 +8,8 @@ name: Build Android Release (firmado)
 #   BITTY_KEYSTORE_PASSWORD  contrasena del keystore
 #   BITTY_KEY_ALIAS          alias de la clave
 #   BITTY_KEY_PASSWORD       contrasena de la clave
-# Si falta alguno, el workflow se detiene con un mensaje claro y NO genera nada firmado.
+# Opcional: BITTY_ADMOB_APP_ID (ID de aplicacion de AdMob de produccion; sin el, se usa el ID de PRUEBA).
+# Si falta alguno de los cuatro, el workflow se detiene con un mensaje claro y NO genera nada firmado.
 # El keystore y las contrasenas NUNCA se suben al repositorio.
 on:
   workflow_dispatch:
@@ -70,6 +71,8 @@ jobs:
           BITTY_KEYSTORE_PASSWORD: ${{ secrets.BITTY_KEYSTORE_PASSWORD }}
           BITTY_KEY_ALIAS: ${{ secrets.BITTY_KEY_ALIAS }}
           BITTY_KEY_PASSWORD: ${{ secrets.BITTY_KEY_PASSWORD }}
+          # Opcional: ID de aplicacion de AdMob de produccion. Si no existe, se usa el ID de PRUEBA de Google.
+          BITTY_ADMOB_APP_ID: ${{ secrets.BITTY_ADMOB_APP_ID }}
         run: |
           chmod +x gradlew
           ./gradlew bundleRelease assembleRelease --stacktrace --no-daemon

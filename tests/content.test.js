@@ -19,7 +19,7 @@ const ok = (c, m) => { n++; if (!c) { fails++; console.log("  FALLA: " + m); } }
     alter default privileges in schema public grant all on tables to anon, authenticated;`);
   const dir = path.join(root, "supabase", "migrations");
   const files = fs.readdirSync(dir).filter(f => f.endsWith(".sql")).sort();
-  const f5 = files.find(f => /_content_schema\.sql$/.test(f)), f6 = files.find(f => /_content_seed\.sql$/.test(f));
+  const f5 = files.find(f => /contenido_esquema\.sql$/.test(f)), f6 = files.find(f => /contenido_datos\.sql$/.test(f));
   ok(f5 && f6, "faltan las migraciones de contenido");
   // las tablas de usuario no hacen falta para el contenido; solo se aplica 005 y 006
   await db.exec(fs.readFileSync(path.join(dir, f5), "utf8"));

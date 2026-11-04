@@ -1,4 +1,4 @@
-// Genera supabase/migrations/20261104000006_content_seed.sql a partir de la app (www/index.html):
+// Genera supabase/migrations/06_contenido_datos.sql a partir de la app (www/index.html):
 // rutas -> courses, bancos -> categories, niveles -> lessons/exercises, preguntas fijas -> questions/answers.
 //   node tools/export-content.js          -> escribe la migración
 //   node tools/export-content.js --check  -> falla si la migración no coincide con la app
@@ -6,7 +6,7 @@
 const fs = require("fs"), path = require("path");
 const { JSDOM, VirtualConsole } = require("jsdom");
 const root = path.join(__dirname, "..");
-const out = path.join(root, "supabase", "migrations", "20261104000006_content_seed.sql");
+const out = path.join(root, "supabase", "migrations", "06_contenido_datos.sql");
 const html = fs.readFileSync(path.join(root, "www", "index.html"), "utf8").replace(/<link[^>]*fonts.googleapis[^>]*>/g, "");
 
 // Bancos -> ruta y nombre (es/en/nl). El orden de position es el de la app.

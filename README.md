@@ -68,14 +68,14 @@ La URL y la clave **pública** (`sb_publishable_…`) están en `www/index.html`
 
 | # | Archivo | Qué hace |
 |---|---|---|
-| 1 | `…001_progress.sql` | Tabla `progress` + RLS |
-| 2 | `…002_profiles_stats.sql` | `profiles` y `stats` + RLS + trigger de perfil |
-| 3 | `…003_mfa_aal.sql` | Exige AAL2 (código 2FA) a las cuentas con 2FA activado |
-| 4 | `…004_secure_xp.sql` | XP validado en el servidor (`award_xp`, `import_legacy_stats`, `xp_events`); `stats` pasa a solo lectura |
-| 5 | `…005_content_schema.sql` | Tablas de contenido (cursos, categorías, lecciones, ejercicios, preguntas, respuestas), lectura pública |
-| 6 | `…006_content_seed.sql` | Carga las 1.144 preguntas y 212 lecciones actuales (idempotente, ~830 KB) |
-| 7 | `…007_activity_history.sql` | Vista `activity_log` y tabla `question_history` (el cliente aún no la usa) |
-| 8 | `…008_delete_account.sql` | `delete_my_account()`: el usuario elimina su cuenta y sus datos |
+| 1 | `01_progreso.sql` | Tabla `progress` + RLS |
+| 2 | `02_perfiles_y_estadisticas.sql` | `profiles` y `stats` + RLS + trigger de perfil |
+| 3 | `03_exigir_2fa.sql` | Exige AAL2 (código 2FA) a las cuentas con 2FA activado |
+| 4 | `04_xp_seguro.sql` | XP validado en el servidor (`award_xp`, `import_legacy_stats`, `xp_events`); `stats` pasa a solo lectura |
+| 5 | `05_contenido_esquema.sql` | Tablas de contenido (cursos, categorías, lecciones, ejercicios, preguntas, respuestas), lectura pública |
+| 6 | `06_contenido_datos.sql` | Carga las 1.144 preguntas y 212 lecciones actuales (idempotente, ~830 KB) |
+| 7 | `07_actividad_e_historial.sql` | Vista `activity_log` y tabla `question_history` (el cliente aún no la usa) |
+| 8 | `08_eliminar_cuenta.sql` | `delete_my_account()`: el usuario elimina su cuenta y sus datos |
 
 Guía completa en [`CONFIGURACION_SUPABASE.md`](CONFIGURACION_SUPABASE.md). Todas son **aditivas**: no borran datos ni reinician el progreso. La 004 conserva el XP existente como `base_xp`. Es seguro desplegar la web antes o después de aplicarlas: sin la 004 el XP se queda en local y se envía cuando exista.
 

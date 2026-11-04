@@ -9,6 +9,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        // ID de aplicacion de AdMob. Sin la variable, se usa el ID de PRUEBA oficial de Google.
+        resValue "string", "admob_app_id", System.getenv("BITTY_ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +18,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Firma de release: SOLO si existen estas variables de entorno (las aporta GitHub Actions desde
+    // los Secrets del repositorio). Sin ellas, la compilacion de depuracion sigue funcionando igual.
+    // Nunca se guarda el keystore ni sus contrasenas en el repositorio.
+    signingConfigs {
+        if (System.getenv("BITTY_KEYSTORE_FILE")) {
+            release {
+                storeFile file(System.getenv("BITTY_KEYSTORE_FILE"))
+                storePassword System.getenv("BITTY_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("BITTY_KEY_ALIAS")
+                keyPassword System.getenv("BITTY_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (System.getenv("BITTY_KEYSTORE_FILE")) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

@@ -1129,7 +1129,8 @@ function xqAdd(L,first,g){if(!(g>0)||!/^\d{4}-\d{2}-\d{2}$/.test(S.last||""))ret
  else if(first&&L.sp!=null){kind="special";ref="sp:"+L.sp+":"+S.dif}
  else if(first&&L.lv!=null){kind=L.boss?"boss":"level";ref="lv:"+DK(S.track)+":"+L.lv}
  else{kind="replay";ref="re:"+id}
- const q=xev();q.push({id,kind,ref:ref.toLowerCase(),xp:g,day:S.last});xevs(q);cloudDirty()}
+ xevPush({id,kind,ref:ref.toLowerCase(),xp:g,day:S.last})}
+function xevPush(e){e.id=e.id||xid();const q=xev();q.push(e);xevs(q);cloudDirty()}
 let xbusy=0;
 async function xflush(t){if(xbusy||!AU||!SBon())return null;xbusy=1;let last=null;
  try{let q=xev(),tries=0;
@@ -1249,6 +1250,59 @@ try{AS=SBon()&&!AU&&!MLK&&!localStorage.getItem("bitty_guest")?1:0}catch(e){AS=0
 (async()=>{if(!SBon())return;
  if(MLK){try{const q=new URLSearchParams(location.hash.slice(1)),a=q.get("access_token"),u=await sbf("/auth/v1/user",{},a);const rr={access_token:a,refresh_token:q.get("refresh_token")||"",expires_in:+q.get("expires_in")||3600,user:u},rec=q.get("type")=="recovery";history.replaceState(null,"",location.pathname+location.search);if(mfaGate(rr,()=>{if(rec){BRC=1;return bwnp()}return S.track?home():welcome()}))return;setAU(rr);AS=0;if(rec){BRC=1;return bwnp()}}catch(e){AS=1;history.replaceState(null,"",location.pathname+location.search);return wl()}}
  if(AU){try{await csync();if(!L)home()}catch(e){}}})();
+// ===== Anuncios (Google AdMob) =====
+// Solo funcionan dentro de la app Android (Capacitor). En el navegador no se muestra nada.
+// IDs de PRUEBA publicados por Google (https://developers.google.com/admob/android/test-ads).
+// Para producción: crea tu cuenta de AdMob, pon tus IDs reales aquí y pon test:false (ver README).
+// No se muestran anuncios durante niveles, jefes, retos ni pantallas de resultado.
+const ADS={test:true,banner:"ca-app-pub-3940256099942544/6300978111",rewarded:"ca-app-pub-3940256099942544/5224354917",max:3,gap:60000,bonus:10,bannerMargin:72};
+const adP=()=>{try{return window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.Plugins&&Capacitor.Plugins.AdMob||null}catch(e){return null}};
+let adReady=null,adBan=0,adBusy=0,adWant=0,adMsg="";
+const adSt=()=>{let o={};try{o=JSON.parse(localStorage.getItem("bitty_ads")||"{}")}catch(e){}const d=dstr(new Date());return o&&o.d==d?{d,n:+o.n||0,t:+o.t||0}:{d,n:0,t:0}};
+const adSave=o=>{try{localStorage.setItem("bitty_ads",JSON.stringify(o))}catch(e){}};
+const adInLevel=()=>!!document.querySelector('[onclick="xq()"]')||!!document.querySelector(".fin");
+// Inicializa el SDK una sola vez y pide el consentimiento (RGPD/UMP) si hace falta.
+function adStart(){const P=adP();if(!P)return Promise.resolve(false);
+ return adReady||(adReady=(async()=>{try{
+  try{const i=await P.requestConsentInfo();if(i&&i.isConsentFormAvailable&&i.status=="REQUIRED")await P.showConsentForm()}catch(e){}
+  await P.initialize({initializeForTesting:!!ADS.test});
+  try{P.addListener("onRewardedVideoAdReward",()=>{if(adWant){adWant=0;adGrant()}})}catch(e){}
+  return true}catch(e){adReady=null;return false}})())}
+async function adBanner(on){const P=adP();if(!P)return;
+ try{if(on&&!adBan&&!adInLevel()){if(!await adStart())return;adBan=1;await P.showBanner({adId:ADS.banner,adSize:"ADAPTIVE_BANNER",position:"BOTTOM_CENTER",margin:ADS.bannerMargin,isTesting:!!ADS.test})}
+  else if(!on&&adBan){adBan=0;await P.hideBanner()}}catch(e){adBan=0}}
+{const n0=navr;navr=on=>{n0(on);setTimeout(()=>adBanner(!!on),0)}}   // tras repintar, para saber si hay un nivel/resultado en pantalla
+function adGrant(){const st=adSt();if(st.n>=ADS.max)return;st.n++;st.t=Date.now();adSave(st);
+ const day=dstr(new Date());S.xp+=ADS.bonus;xevPush({kind:"ad",ref:"ad:"+day+":"+st.n,xp:ADS.bonus,day});save();
+ adMsg=tt("¡+"+ADS.bonus+" bytes de bonus!","+"+ADS.bonus+" bonus bytes!","+"+ADS.bonus+" bonusbytes!");adBusy=0;cre()}
+async function adWatch(){const P=adP();if(!P||adBusy||adInLevel())return;const st=adSt();
+ if(st.n>=ADS.max){adMsg=tt("Hoy ya has usado todos los bonus. ¡Vuelve mañana!","You've used all of today's bonuses. Come back tomorrow!","Je hebt vandaag alle bonussen gebruikt. Kom morgen terug!");return cre()}
+ if(Date.now()-st.t<ADS.gap){adMsg=tt("Espera un poco antes del siguiente vídeo.","Wait a moment before the next video.","Wacht even voor de volgende video.");return cre()}
+ adBusy=1;adMsg=tt("Cargando anuncio…","Loading ad…","Advertentie laden…");cre();
+ try{if(!await adStart())throw new Error("init");await P.prepareRewardVideoAd({adId:ADS.rewarded,isTesting:!!ADS.test});adWant=1;await P.showRewardVideoAd();
+  if(adWant){adWant=0;adMsg=tt("No has completado el vídeo, así que no hay bonus.","You didn't finish the video, so no bonus.","Je hebt de video niet afgekeken, dus geen bonus.")}}
+ catch(e){adWant=0;adMsg=tt("Ahora mismo no hay anuncios disponibles. Inténtalo más tarde.","No ads available right now. Try again later.","Er zijn nu geen advertenties beschikbaar. Probeer het later opnieuw.")}
+ adBusy=0;cre()}
+function adCard(){if(!adP())return"";const st=adSt(),left=Math.max(0,ADS.max-st.n);
+ return `<div class="card bx" style="margin-top:18px"><b>🎁 ${tt("Bonus de bytes","Bonus bytes","Bonusbytes")}</b><p class="mut sm">${tt("Mira un vídeo corto y gana +"+ADS.bonus+" bytes. Disponibles hoy: "+left+" de "+ADS.max+".","Watch a short video and earn +"+ADS.bonus+" bytes. Left today: "+left+" of "+ADS.max+".","Bekijk een korte video en verdien +"+ADS.bonus+" bytes. Vandaag nog: "+left+" van "+ADS.max+".")}</p><button class="btn" ${adBusy||left<1?"disabled":""} onclick="adWatch()">▶ ${tt("Ver vídeo","Watch video","Video bekijken")}</button>${adMsg?`<div class="mut sm c" style="margin-top:8px">${esc(adMsg)}</div>`:""}</div>`}
+{const p1=perfil;perfil=()=>p1()+adCard()}
+// ===== Android: botón atrás y conexión =====
+let bexT=0;
+function btoast(m){let e=$("#tst");if(!e){e=document.createElement("div");e.id="tst";e.style.cssText="position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:99;max-width:86%;text-align:center";document.body.appendChild(e)}e.textContent=m;e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>{e.style.display="none"},2000)}
+// Devuelve true si "atrás" se ha gestionado dentro de la app; false si toca salir.
+function bback(){
+ if(MP){mfaCancel();return true}                       // código 2FA al iniciar sesión -> volver al login
+ if(ME){mfaEnrollCancel();return true}                 // activando 2FA -> cancelar
+ if($('[onclick="xq()"]')){xq();return true}           // dentro de un nivel -> confirmar salida
+ if($(".fin")){home();return true}                     // pantalla de resultado -> inicio
+ if(AS||!S.name)return false;                          // bienvenida/login/nombre -> salir
+ if(tab!="r"){tab="r";home();return true}              // Especiales/Perfil -> Ruta
+ return false}
+function bexit(){const n=Date.now();if(n-bexT<2000){bexT=0;try{Capacitor.Plugins.App.exitApp()}catch(e){}return}bexT=n;btoast(tt("Pulsa otra vez para salir","Press back again to exit","Druk nogmaals op terug om te sluiten"))}
+try{const A=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.App;if(A&&A.addListener)A.addListener("backButton",()=>{if(!bback())bexit()})}catch(e){}
+function offUI(){let e=$("#offb");const off=navigator.onLine===false;if(!e){if(!off)return;e=document.createElement("div");e.id="offb";e.style.cssText="position:fixed;top:0;left:0;right:0;background:#b45309;color:#fff;text-align:center;font-size:13px;padding:4px 8px;z-index:99;pointer-events:none";document.body.appendChild(e)}
+ e.textContent=tt("Sin conexión: tu progreso se guarda en el dispositivo y se sincronizará al volver.","Offline: your progress is saved on this device and will sync when you're back online.","Offline: je voortgang wordt op dit apparaat bewaard en gesynchroniseerd zodra je weer online bent.");e.style.display=off?"block":"none"}
+addEventListener("offline",offUI);addEventListener("online",()=>{offUI();if(AU&&SBon())cpush()});offUI();
 document.documentElement.lang=S.lang;
 AS?wl():S.track?home():welcome();
 </script></body></html>

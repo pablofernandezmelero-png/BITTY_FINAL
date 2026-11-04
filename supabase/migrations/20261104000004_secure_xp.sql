@@ -16,7 +16,7 @@ update public.stats set base_xp = xp, legacy_imported = true where legacy_import
 create table if not exists public.xp_events (
   id         uuid primary key,                       -- lo genera el cliente: reintentar no duplica
   user_id    uuid not null references auth.users(id) on delete cascade,
-  kind       text not null check (kind in ('level','boss','special','challenge','replay')),
+  kind       text not null check (kind in ('level','boss','special','challenge','replay','ad')),
   ref        text not null check (ref ~ '^[a-z0-9:_-]{1,80}$'),
   xp         integer not null check (xp > 0 and xp <= 500),
   day        date not null,
@@ -26,7 +26,7 @@ create index if not exists xp_events_user_day on public.xp_events (user_id, day)
 create index if not exists xp_events_user_created on public.xp_events (user_id, created_at desc);
 -- Las recompensas "de primera vez" solo se pueden cobrar una vez por cuenta y referencia.
 create unique index if not exists xp_events_once on public.xp_events (user_id, ref)
-  where kind in ('level','boss','special','challenge');
+  where kind in ('level','boss','special','challenge','ad');
 
 alter table public.xp_events enable row level security;
 drop policy if exists "xp_events_select_own" on public.xp_events;
@@ -43,7 +43,7 @@ revoke insert, update, delete on public.stats from anon, authenticated;
 
 -- ===== Función: conceder XP =====
 -- Recompensas permitidas (idénticas a las de la app):
---   level 10 · boss 40 · special 50 · challenge 50/80/130 (diario) y 180/300/480 (semanal) · replay 5
+--   level 10 · boss 40 · special 50 · challenge 50/80/130 (diario) y 180/300/480 (semanal) · replay 5 · ad 10 (máx. 3 al día)
 create or replace function public.award_xp(
   p_event_id uuid,
   p_kind     text,
@@ -83,6 +83,8 @@ begin
     or (p_kind = 'special'   and p_xp = 50)
     or (p_kind = 'challenge' and p_xp in (50, 80, 130, 180, 300, 480))
     or (p_kind = 'replay'    and p_xp = 5)
+    -- bonus de anuncio recompensado: 10 XP, como mucho 3 por día (ref ad:AAAA-MM-DD:1..3, cobrable una sola vez)
+    or (p_kind = 'ad'        and p_xp = 10 and p_ref in ('ad:' || p_day::text || ':1', 'ad:' || p_day::text || ':2', 'ad:' || p_day::text || ':3'))
   ) then
     raise exception 'invalid_reward' using errcode = '22023';
   end if;

@@ -133,6 +133,23 @@ const uuid = i => "aaaaaaaa-0000-0000-0000-" + String(i).padStart(12, "0");
   q = await as("authenticated", C, "select public.import_legacy_stats(1, 1, current_date, 1) r");
   ok(q.r && q.r.rows[0].r.imported === false && (await xpOf(C)).xp === 20000, "segunda importación ignorada");
 
+  // 10a. Bonus de anuncio recompensado: 10 XP, 3 al día, una vez por referencia
+  await slow();
+  q = await award(C, uuid(800), "ad", "ad:" + today + ":1", 10, today);
+  ok(q.r && q.r.rows[0].r.awarded === 10, "bonus de anuncio 1/3 concede 10 XP");
+  await slow();
+  q = await award(C, uuid(801), "ad", "ad:" + today + ":1", 10, today);
+  ok(q.r && q.r.rows[0].r.awarded === 0, "el mismo bonus no se cobra dos veces");
+  await slow();
+  q = await award(C, uuid(802), "ad", "ad:" + today + ":4", 10, today);
+  ok(q.e && /invalid_reward/.test(q.e), "no existe un 4.º bonus al día");
+  await slow();
+  q = await award(C, uuid(803), "ad", "ad:" + dayOf(-1) + ":2", 10, today);
+  ok(q.e && /invalid_reward/.test(q.e), "la referencia del bonus debe ser la del día indicado");
+  await slow();
+  q = await award(C, uuid(804), "ad", "ad:" + today + ":2", 20, today);
+  ok(q.e && /invalid_reward/.test(q.e), "el bonus no puede valer más de 10");
+
   // 10b. 2FA: con factor TOTP verificado, solo AAL2 accede
   const M = "55555555-5555-5555-5555-555555555555";
   await db.exec(`insert into auth.users values ('${M}'); insert into auth.mfa_factors (user_id, factor_type, status) values ('${M}', 'totp', 'verified');`);

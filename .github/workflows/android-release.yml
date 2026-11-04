@@ -1,0 +1,90 @@
+name: Build Android Release (firmado)
+
+# Se ejecuta a mano: GitHub -> Actions -> "Build Android Release (firmado)" -> Run workflow.
+# Genera un AAB (para Google Play) y un APK de release FIRMADOS con tu clave.
+#
+# Necesita estos "Secrets" en GitHub (Settings -> Secrets and variables -> Actions -> New repository secret):
+#   BITTY_KEYSTORE_BASE64    el archivo .jks/.keystore codificado en base64
+#   BITTY_KEYSTORE_PASSWORD  contrasena del keystore
+#   BITTY_KEY_ALIAS          alias de la clave
+#   BITTY_KEY_PASSWORD       contrasena de la clave
+# Si falta alguno, el workflow se detiene con un mensaje claro y NO genera nada firmado.
+# El keystore y las contrasenas NUNCA se suben al repositorio.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      HAS_KEYSTORE: ${{ secrets.BITTY_KEYSTORE_BASE64 != '' && secrets.BITTY_KEYSTORE_PASSWORD != '' && secrets.BITTY_KEY_ALIAS != '' && secrets.BITTY_KEY_PASSWORD != '' }}
+    steps:
+      - name: Comprobar que existen los secretos de firma
+        run: |
+          if [ "$HAS_KEYSTORE" != "true" ]; then
+            echo "::error::Faltan los secretos de firma (BITTY_KEYSTORE_BASE64, BITTY_KEYSTORE_PASSWORD, BITTY_KEY_ALIAS, BITTY_KEY_PASSWORD). Consulta el README, apartado 'Firma de release'."
+            exit 1
+          fi
+
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Instalar dependencias y ejecutar pruebas
+        run: |
+          npm ci
+          npm test
+
+      - name: Sincronizar la web con Android
+        run: npx cap sync android
+
+      - name: Restaurar el keystore (solo en el runner)
+        env:
+          KS_B64: ${{ secrets.BITTY_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/bitty-release.keystore"
+          echo "BITTY_KEYSTORE_FILE=$RUNNER_TEMP/bitty-release.keystore" >> "$GITHUB_ENV"
+
+      - name: Compilar AAB y APK de release firmados
+        working-directory: android
+        env:
+          BITTY_KEYSTORE_PASSWORD: ${{ secrets.BITTY_KEYSTORE_PASSWORD }}
+          BITTY_KEY_ALIAS: ${{ secrets.BITTY_KEY_ALIAS }}
+          BITTY_KEY_PASSWORD: ${{ secrets.BITTY_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease assembleRelease --stacktrace --no-daemon
+
+      - name: Comprobar que existen los archivos
+        run: |
+          test -f android/app/build/outputs/bundle/release/app-release.aab
+          test -f android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Subir AAB y APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bitty-release
+          path: |
+            android/app/build/outputs/bundle/release/app-release.aab
+            android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30

@@ -1081,7 +1081,7 @@ function fin(w){navr(false);let g=0;const r0=rank(),bs=L.boss;
 if(w){const td=new Date(),f=x=>x.toISOString().slice(0,10),y=new Date(td-864e5);
 if(S.last!=f(td)){S.streak=S.last==f(y)?S.streak+1:1;S.last=f(td)}
 const first=L.ch?!cSt(L.ch).ok:L.sp!=null?!S.sp.includes(L.sp+":"+S.dif):L.lv==(S.done[DK(S.track)]||0);g=first?L.xp:L.ch?0:5;S.xp+=g;
-if(L.sp!=null&&first)S.sp.push(L.sp+":"+S.dif);if(L.ch&&first){const c=cSt(L.ch);c.ok=1;c.dif=S.dif;S.ch[L.ch]=c;S.cn=S.cn||{d:0,w:0};S.cn[L.ch]=(S.cn[L.ch]||0)+1}if(L.lv!=null&&first)S.done[DK(S.track)]=L.lv+1;save()}
+if(L.sp!=null&&first)S.sp.push(L.sp+":"+S.dif);if(L.ch&&first){const c=cSt(L.ch);c.ok=1;c.dif=S.dif;S.ch[L.ch]=c;S.cn=S.cn||{d:0,w:0};S.cn[L.ch]=(S.cn[L.ch]||0)+1}if(L.lv!=null&&first)S.done[DK(S.track)]=L.lv+1;xqAdd(L,first,g);save()}
 const st=Math.max(1,Math.round(L.hp/L.max*3)),pr=Math.round(L.n/(L.n+(L.err||0))*100),bn=td(L.t||"").replace(/^Mini-?boss: /,"");
 show(`<div class="c fin">${B(130,w?"wow":"no",w?"hop":"shk")}<h1 class="gt">${L.ch?(w?(L.ch=="d"?tt("¡Reto diario superado!","Daily challenge complete!","Dagelijkse uitdaging gehaald!"):tt("¡Reto semanal superado!","Weekly challenge complete!","Wekelijkse uitdaging gehaald!")):tt("¡El reto ha podido contigo!","The challenge got the better of you!","De uitdaging was net te sterk voor je!")):w?(bs?tt("¡Mini-boss derrotado!","Mini-boss defeated!","Miniboss verslagen!"):R(tt(["¡Nivel completado!","¡Lo lograste, "+nm()+"!","¡Otro más para la colección!"],["Level complete!","You did it, "+nm()+"!","Another one for the collection!"],["Level voltooid!","Het is je gelukt, "+nm()+"!","Weer eentje voor de collectie!"]))):(bs?tt("¡El jefe ha ganado esta vez!","The boss won this time!","De baas heeft deze keer gewonnen!"):tt("¡Te quedaste sin chispas!","You ran out of sparks!","Je hebt geen vonken meer!"))}</h1>${w?`<div class="stars">${[1,2,3].map(i=>`<span class="${i<=st?"on":""}" style="--i:${i}">⭐</span>`).join("")}</div>`:""}<p>${L.ch?(w?(g>0?tt(`Esto no es para cualquiera, ${nm()}: has superado el reto.`,`This isn't for just anyone, ${nm()}: you beat the challenge.`,`Dit is niet voor iedereen weggelegd, ${nm()}: je hebt de uitdaging gehaald.`):tt(`Reto superado otra vez, ${nm()}. La recompensa de este periodo ya la cobraste.`,`Beaten again, ${nm()}. You already claimed this period's reward.`,`Opnieuw gehaald, ${nm()}. De beloning van deze periode heb je al binnen.`)):tt(`Duro, ¿eh, ${nm()}? Solo había un intento. Repasa y vuelve cuando se renueve el reto.`,`Tough, huh, ${nm()}? There was only one attempt. Review and come back when the challenge renews.`,`Pittig hè, ${nm()}? Er was maar één poging. Herhaal de stof en kom terug als de uitdaging vernieuwd is.`)):w?(bs?tt(`Increíble, ${nm()}: has derrotado a ${bn}.`,`Incredible, ${nm()}: you defeated ${bn}.`,`Ongelooflijk, ${nm()}: je hebt ${bn.replace(/^(De|Het) /,m=>m.toLowerCase())} verslagen.`):R(tt(MOT,MOTE,MOTN))):(bs?tt(`Los jefes son duros, ${nm()}. Repasa el tema y vuelve a por él.`,`Bosses are tough, ${nm()}. Review the topic and come back for round two.`,`Minibosses zijn taai, ${nm()}. Herhaal het onderwerp en kom terug voor ronde twee.`):tt(`Nadie nace sabiendo, ${nm()}. Repasa un poco y vuelve a por él: tú puedes.`,`Nobody is born knowing, ${nm()}. Review a bit and come back: you've got this.`,`Niemand wordt geboren met alle kennis, ${nm()}. Herhaal de stof even en probeer het opnieuw: jij kunt dit.`))}</p>${w&&bs?`<div class="rup">👾 ${tt("¡Jefe del tema superado!","Topic boss cleared!","Miniboss van het thema verslagen!")}</div>`:""}${w&&rank()!=r0?`<div class="rup">🎖️ ${tt("¡Nuevo rango: ","New rank: ","Nieuwe rang: ")}${rank()}${tt("!","!","!")}</div>`:""}${w?`<div class="tiles"><div class="tile" style="--i:0"><b>💾 +<span id="cu" data-n="${g}">0</span></b>bytes</div><div class="tile" style="--i:1"><b>🎯 ${pr}%</b>${tt("precisión","accuracy","nauwkeurigheid")}</div><div class="tile" style="--i:2"><b>🔥 ${S.streak}</b>${tt(S.streak==1?"día de racha":"días de racha","day streak",S.streak==1?"dag op rij":"dagen op rij")}</div></div>`:""}<button class="btn ${w?"g":""}" style="margin-top:22px" onclick="home()">${w?tt("Continuar","Continue","Doorgaan"):tt("Volver","Back","Terug")}</button></div>`);
 if(w){fx.win();vib([30,50,30,50,80]);rain();count()}}
@@ -1115,16 +1115,44 @@ function cmerge(c){c=cleanS(c);const m={},mx=(a,b)=>Math.max(a||0,b||0),u=(a,b)=
 async function cpush(){clearTimeout(ctm);ctm=0;if(!AU||!SBon())return false;
  try{const t=await tok(),now=new Date().toISOString(),up=(p,b)=>sbf(p,{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(b)},t);
   await up("/rest/v1/progress?on_conflict=user_id",{user_id:AU.id,data:S,updated_at:now});
-  // Tablas de perfil y estadísticas (migración 002). Si aún no existen, se ignora el error.
-  try{await up("/rest/v1/stats?on_conflict=user_id",{user_id:AU.id,xp:S.xp|0,streak:S.streak|0,last_day:S.last||null,levels_done:Object.values(S.done||{}).reduce((a,b)=>a+(+b||0),0),updated_at:now});
-   await up("/rest/v1/profiles?on_conflict=id",{id:AU.id,display_name:(S.name&&S.name!="·")?S.name:null,updated_at:now})}catch(e){}
+  // Perfil (migración 002). Si aún no existe la tabla, se ignora el error.
+  try{await up("/rest/v1/profiles?on_conflict=id",{id:AU.id,display_name:(S.name&&S.name!="·")?S.name:null,updated_at:now})}catch(e){}
+  // XP y estadísticas: el servidor es la autoridad (migración 003); aquí solo se envían los eventos.
+  xflush(t);
   return true}catch(e){return false}}
+// ===== XP validado en el servidor =====
+// Cada recompensa se guarda como evento en una cola local (sobrevive sin conexión) y se envía a award_xp.
+const XQK="bitty_xq",xev=()=>{try{const a=JSON.parse(localStorage.getItem(XQK)||"[]");return Array.isArray(a)?a:[]}catch(e){return[]}},xevs=a=>{try{localStorage.setItem(XQK,JSON.stringify(a.slice(-500)))}catch(e){}};
+const xid=()=>{try{if(crypto.randomUUID)return crypto.randomUUID()}catch(e){}const h=n=>Array.from({length:n},()=>Math.floor(Math.random()*16).toString(16)).join("");return h(8)+"-"+h(4)+"-4"+h(3)+"-a"+h(3)+"-"+h(12)};
+function xqAdd(L,first,g){if(!(g>0)||!/^\d{4}-\d{2}-\d{2}$/.test(S.last||""))return;const id=xid();let kind,ref;
+ if(L.ch){kind="challenge";ref="ch:"+L.ch+":"+cKey(L.ch)+":"+S.dif}
+ else if(first&&L.sp!=null){kind="special";ref="sp:"+L.sp+":"+S.dif}
+ else if(first&&L.lv!=null){kind=L.boss?"boss":"level";ref="lv:"+DK(S.track)+":"+L.lv}
+ else{kind="replay";ref="re:"+id}
+ const q=xev();q.push({id,kind,ref:ref.toLowerCase(),xp:g,day:S.last});xevs(q);cloudDirty()}
+let xbusy=0;
+async function xflush(t){if(xbusy||!AU||!SBon())return null;xbusy=1;let last=null;
+ try{let q=xev(),tries=0;
+  while(q.length&&AU){const e=q[0];
+   try{last=await sbf("/rest/v1/rpc/award_xp",{method:"POST",body:JSON.stringify({p_event_id:e.id,p_kind:e.kind,p_ref:e.ref,p_xp:e.xp,p_day:e.day})},t);q.shift();xevs(q);tries=0;if(q.length)await new Promise(r=>setTimeout(r,8300))}
+   catch(err){const m=String((err&&err.message)||"");
+    if(/rate_limited/.test(m)&&tries++<3){await new Promise(r=>setTimeout(r,8500));continue}
+    if(/invalid_|daily_cap/.test(m)){q.shift();xevs(q);continue}   // rechazo definitivo: se descarta
+    break}}                                                        // sin conexión / error temporal: se conserva
+  if(last&&typeof last.xp=="number"){S.xp=last.xp+xev().reduce((a,e)=>a+e.xp,0);save()}}
+ finally{xbusy=0}return last}
+// Al iniciar sesión: el XP del servidor manda. Si la cuenta no tiene estadísticas aún, se importa UNA vez el progreso local.
+async function xsync(t){try{const g=()=>sbf("/rest/v1/stats?select=xp&user_id=eq."+encodeURIComponent(AU.id),{},t);
+  let st=await g();const pend=xev().reduce((a,e)=>a+e.xp,0);
+  if(!st||!st.length){await sbf("/rest/v1/rpc/import_legacy_stats",{method:"POST",body:JSON.stringify({p_xp:Math.max(0,(S.xp|0)-pend),p_streak:S.streak|0,p_last:S.last||null,p_levels:Object.values(S.done||{}).reduce((a,b)=>a+(+b||0),0)})},t);st=await g()}
+  await xflush(t);st=await g();
+  if(st&&st[0]&&typeof st[0].xp=="number"){S.xp=st[0].xp+xev().reduce((a,e)=>a+e.xp,0);save()}}catch(e){}}
 // Si en este dispositivo jugó OTRA cuenta, su progreso no se mezcla con el de la nueva.
-function creset(){const d={name:"",track:null,dif:1,done:{},xp:0,streak:0,last:"",sp:[],mute:S.mute,lang:S.lang,hist:[],hd:{},ch:{},cn:{},v:2};for(const k in S)delete S[k];Object.assign(S,d);HSs.clear();for(const k in HSd)delete HSd[k]}
+function creset(){const d={name:"",track:null,dif:1,done:{},xp:0,streak:0,last:"",sp:[],mute:S.mute,lang:S.lang,hist:[],hd:{},ch:{},cn:{},v:2};for(const k in S)delete S[k];Object.assign(S,d);HSs.clear();for(const k in HSd)delete HSd[k];xevs([])}
 const owner=()=>{try{return localStorage.getItem("bitty_owner")}catch(e){return null}},setOwner=v=>{try{localStorage.setItem("bitty_owner",v)}catch(e){}};
 function cloudDirty(){if(!AU||!SBon())return;clearTimeout(ctm);ctm=setTimeout(cpush,3000)}
 async function csync(){const t=await tok();const ow=owner();if(ow&&ow!=AU.id)creset();setOwner(AU.id);const r=await sbf("/rest/v1/progress?select=data&user_id=eq."+encodeURIComponent(AU.id),{},t);
- if(r&&r[0]&&r[0].data)cmerge(r[0].data);await cpush()}
+ if(r&&r[0]&&r[0].data)cmerge(r[0].data);await xsync(t);await cpush()}
 let AS=0,amode="i";
 const cre=()=>{if(AS)return wl();if(tab=="p"&&!document.querySelector("#cb")&&!document.querySelector(".fin"))home()};
 async function cgo(k){if(cbusy||!SBon())return;const e=$("#cE"),p=$("#cP"),em=e?e.value.trim():"",pw=p?p.value:"";cEm=em;
@@ -1133,7 +1161,7 @@ async function cgo(k){if(cbusy||!SBon())return;const e=$("#cE"),p=$("#cP"),em=e?
  cbusy=1;cmsg=tt("Conectando…","Connecting…","Verbinden…");cre();let done=0;
  try{if(k=="m"){await sbf("/auth/v1/otp?redirect_to="+encodeURIComponent(location.origin+location.pathname),{method:"POST",body:JSON.stringify({email:em,create_user:true})});cmsg=tt("Te hemos enviado un enlace mágico: ábrelo desde este dispositivo.","We sent you a magic link: open it on this device.","We hebben een magische link gestuurd: open die op dit apparaat.")}
   else{const r=await sbf(k=="s"?"/auth/v1/signup":"/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email:em,password:pw})});
-   if(r&&r.access_token){setAU(r);await csync();done=1;cmsg=tt("¡Conectado! Tu progreso se guarda en la nube.","Connected! Your progress is saved in the cloud.","Verbonden! Je voortgang wordt in de cloud bewaard.")}
+   if(r&&r.access_token){if(mfaGate(r,()=>{AS=0;cmsg="";return S.track?home():welcome()}))return;setAU(r);MF=null;await csync();done=1;cmsg=tt("¡Conectado! Tu progreso se guarda en la nube.","Connected! Your progress is saved in the cloud.","Verbonden! Je voortgang wordt in de cloud bewaard.")}
    else{amode="i";cmsg=tt("Cuenta creada. Revisa tu email para confirmarla y luego pulsa Entrar.","Account created. Check your email to confirm it, then tap Sign in.","Account gemaakt. Bevestig via je e-mail en tik daarna op Inloggen.")}}}
  catch(x){cmsg=tt("No se pudo: ","Could not: ","Mislukt: ")+x.message}
  cbusy=0;if(done&&AS){AS=0;cmsg="";return S.track?home():welcome()}cre()}
@@ -1162,18 +1190,64 @@ function wl(){navr(false);const b=cbusy?"disabled":"",s=amode=="s";
  <div class="c" style="margin:6px 0 14px"><div class="mut sm">${tt("¿Solo quieres probar?","Just want to try it?","Wil je het gewoon proberen?")}</div><button class="btn" style="margin-top:8px" onclick="gst()">🎮 ${tt("Jugar como invitado","Play as guest","Spelen als gast")}</button><div class="mut sm" style="margin-top:6px">${tt("Tu progreso se guardará solo en este dispositivo. Podrás crear una cuenta cuando quieras desde el Perfil.","Your progress will be saved on this device only. You can create an account anytime from your Profile.","Je voortgang wordt alleen op dit apparaat bewaard. Je kunt altijd een account maken via je Profiel.")}</div></div></div>`)}
 async function cnow(){if(cbusy||!AU)return;cbusy=1;cmsg=tt("Sincronizando…","Syncing…","Synchroniseren…");cre();
  try{await csync();cmsg=tt("Sincronizado ✔","Synced ✔","Gesynchroniseerd ✔")}catch(x){cmsg=tt("No se pudo: ","Could not: ","Mislukt: ")+x.message}cbusy=0;cre()}
-async function cout(){if(AU){await cpush();const a=AU.a;sbf("/auth/v1/logout",{method:"POST"},a).catch(()=>{})}clearTimeout(ctm);AU=null;asave();cmsg="";try{localStorage.removeItem("bitty_guest")}catch(e){}AS=1;wl()}
+async function cout(){if(AU){await cpush();const a=AU.a;sbf("/auth/v1/logout",{method:"POST"},a).catch(()=>{})}clearTimeout(ctm);AU=null;MF=null;ME=null;MP=null;asave();cmsg="";try{localStorage.removeItem("bitty_guest")}catch(e){}AS=1;wl()}
+// ===== 2FA (TOTP) con Supabase MFA =====
+// AAL1 = contraseña. AAL2 = contraseña + código de 6 dígitos. Si hay un factor verificado, la sesión no se guarda hasta pasar a AAL2.
+const jaal=t=>{try{return JSON.parse(atob(String(t).split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))).aal||"aal1"}catch(e){return"aal1"}};
+const mfaVer=u=>((u&&u.factors)||[]).filter(f=>f.factor_type=="totp"&&f.status=="verified"&&/^[0-9a-f-]{36}$/.test(f.id));
+const mfaNeed=r=>r&&r.access_token&&mfaVer(r.user).length>0&&jaal(r.access_token)!="aal2";
+let MF=null,MP=null,ME=null,mbusy=0,mmsg="",mload=0;
+const mfaMsg=x=>/invalid|incorrect|expired|mfa_verification/i.test(x.message)?tt("Código incorrecto o caducado. Prueba con el siguiente.","Wrong or expired code. Try the next one.","Onjuiste of verlopen code. Probeer de volgende."):tt("No se pudo: ","Could not: ","Mislukt: ")+x.message;
+const mfaCode=()=>(($("#cM")||{}).value||"").replace(/\s/g,"");
+function mfaGate(r,next){if(!mfaNeed(r))return false;MP={r,fid:mfaVer(r.user)[0].id,next};AS=0;cbusy=0;cmsg="";mmsg="";wmfa();return true}
+function wmfa(){navr(false);const b=mbusy?"disabled":"";
+ show(`<div class="bx"><div class="c" style="padding-top:8px">${B(110,"ok","float")}<h1 class="gt">${tt("Verificación en dos pasos","Two-step verification","Verificatie in twee stappen")}</h1><p class="mut">${tt("Escribe el código de 6 dígitos de tu app de autenticación (Google Authenticator, Microsoft Authenticator…).","Enter the 6-digit code from your authenticator app (Google Authenticator, Microsoft Authenticator…).","Vul de 6-cijferige code van je authenticator-app in (Google Authenticator, Microsoft Authenticator…).")}</p></div><div class="card"><input id="cM" class="inp" style="margin:6px 0 12px;font-size:22px;text-align:center;letter-spacing:6px" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000000" onkeydown="if(event.key=='Enter')mfaGo()"><button class="btn g" ${b} onclick="mfaGo()">${tt("Verificar","Verify","Verifiëren")}</button>${mmsg?`<div class="mut sm c" style="margin-top:10px">${esc(mmsg)}</div>`:""}<div class="c"><button class="lnk" onclick="mfaCancel()">${tt("Cancelar","Cancel","Annuleren")}</button></div></div></div>`)}
+function mfaCancel(){MP=null;mmsg="";AS=1;wl()}
+async function mfaVerify(id,tk,code){if(!/^\d{6}$/.test(code))throw new Error("invalid code");
+ const ch=await sbf("/auth/v1/factors/"+id+"/challenge",{method:"POST",body:"{}"},tk);
+ return sbf("/auth/v1/factors/"+id+"/verify",{method:"POST",body:JSON.stringify({challenge_id:ch.id,code})},tk)}
+async function mfaGo(){if(mbusy||!MP)return;if(!/^\d{6}$/.test(mfaCode())){mmsg=tt("Escribe los 6 dígitos del código.","Enter the 6 digits of the code.","Vul de 6 cijfers van de code in.");return wmfa()}
+ mbusy=1;mmsg=tt("Verificando…","Verifying…","Verifiëren…");const code=mfaCode();wmfa();
+ try{const v=await mfaVerify(MP.fid,MP.r.access_token,code);if(!v||!v.access_token)throw new Error("mfa_verification");if(!v.user)v.user=MP.r.user;
+  const nx=MP.next;MP=null;mbusy=0;mmsg="";MF=null;setAU(v);try{await csync()}catch(e){}return nx()}
+ catch(x){mmsg=mfaMsg(x)}mbusy=0;wmfa()}
+async function mfaLoad(){if(!AU||mload)return;mload=1;try{const u=await sbf("/auth/v1/user",{},await tok());MF=(u&&u.factors)||[]}catch(e){MF=MF||[]}mload=0;cre()}
+const mfaQr=s=>{s=String(s||"");return /^data:image\/svg\+xml/.test(s)?s:"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(s)};
+async function mfaEnroll(){if(mbusy||!AU)return;mbusy=1;mmsg="";cre();
+ try{const t=await tok();
+  for(const f of (MF||[]).filter(f=>f.status!="verified"&&/^[0-9a-f-]{36}$/.test(f.id)))try{await sbf("/auth/v1/factors/"+f.id,{method:"DELETE"},t)}catch(e){}
+  const r=await sbf("/auth/v1/factors",{method:"POST",body:JSON.stringify({factor_type:"totp",issuer:"Bitty",friendly_name:"Bitty "+new Date().toISOString().slice(0,16).replace("T"," ")})},t);
+  if(!r||!r.id||!r.totp)throw new Error("enroll");ME={id:r.id,qr:mfaQr(r.totp.qr_code),secret:String(r.totp.secret||""),uri:String(r.totp.uri||"")}}
+ catch(x){mmsg=tt("No se pudo activar el 2FA: ","Could not enable 2FA: ","2FA activeren mislukt: ")+x.message}mbusy=0;cre()}
+async function mfaEnrollVerify(){if(mbusy||!AU||!ME)return;if(!/^\d{6}$/.test(mfaCode())){mmsg=tt("Escribe los 6 dígitos del código.","Enter the 6 digits of the code.","Vul de 6 cijfers van de code in.");return cre()}
+ mbusy=1;mmsg=tt("Verificando…","Verifying…","Verifiëren…");const code=mfaCode();cre();
+ try{const v=await mfaVerify(ME.id,await tok(),code);if(!v||!v.access_token)throw new Error("mfa_verification");if(!v.user)v.user={id:AU.id,email:AU.m};
+  setAU(v);ME=null;MF=null;mmsg=tt("¡2FA activado! A partir de ahora te pediremos el código al iniciar sesión.","2FA enabled! From now on we'll ask for the code when you sign in.","2FA geactiveerd! Voortaan vragen we de code bij het inloggen.");mbusy=0;mfaLoad();return}
+ catch(x){mmsg=mfaMsg(x)}mbusy=0;cre()}
+async function mfaEnrollCancel(){const id=ME&&ME.id;ME=null;mmsg="";cre();if(id&&AU)try{await sbf("/auth/v1/factors/"+id,{method:"DELETE"},await tok())}catch(e){}MF=null;mfaLoad()}
+async function mfaRemove(id){if(mbusy||!AU||!/^[0-9a-f-]{36}$/.test(id))return;
+ if(!confirm(tt("¿Quitar este dispositivo de verificación? Si es el último, tu cuenta quedará solo con contraseña.","Remove this verification device? If it's the last one, your account will only use a password.","Dit verificatieapparaat verwijderen? Als het het laatste is, gebruikt je account alleen een wachtwoord.")))return;
+ mbusy=1;mmsg="";cre();
+ try{await sbf("/auth/v1/factors/"+id,{method:"DELETE"},await tok());MF=null;mmsg=tt("Dispositivo quitado.","Device removed.","Apparaat verwijderd.")}
+ catch(x){mmsg=tt("No se pudo quitar: ","Could not remove: ","Verwijderen mislukt: ")+x.message}mbusy=0;mfaLoad();cre()}
+function mfaCard(){if(MF===null){mfaLoad();return""}
+ const ver=MF.filter(f=>f.status=="verified"&&/^[0-9a-f-]{36}$/.test(f.id)),b=mbusy?"disabled":"",m=mmsg?`<div class="mut sm c" style="margin-top:8px">${esc(mmsg)}</div>`:"";
+ let h=`<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(128,128,128,.25)"><b>🔐 ${tt("Verificación en dos pasos (2FA)","Two-step verification (2FA)","Verificatie in twee stappen (2FA)")}</b>`;
+ if(ME)h+=`<p class="mut sm">${tt("1. Escanea el QR con Google Authenticator o Microsoft Authenticator. 2. Escribe el código de 6 dígitos que muestra.","1. Scan the QR with Google Authenticator or Microsoft Authenticator. 2. Enter the 6-digit code it shows.","1. Scan de QR met Google Authenticator of Microsoft Authenticator. 2. Vul de 6-cijferige code in die je ziet.")}</p><div class="c"><img alt="QR" src="${esc(ME.qr)}" style="width:190px;height:190px;background:#fff;padding:8px;border-radius:12px"></div><p class="mut sm c">${tt("¿Estás en este mismo móvil? Introduce esta clave a mano en la app:","On this same phone? Enter this key by hand in the app:","Op dezelfde telefoon? Voer deze sleutel handmatig in de app in:")}<br><code style="user-select:all;word-break:break-all">${esc(ME.secret)}</code></p>${/^otpauth:\/\//.test(ME.uri)?`<div class="c"><a class="lnk" href="${esc(ME.uri)}">${tt("Abrir en mi app de autenticación","Open in my authenticator app","Openen in mijn authenticator-app")}</a></div>`:""}<input id="cM" class="inp" style="margin:8px 0;font-size:20px;text-align:center;letter-spacing:5px" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000000" onkeydown="if(event.key=='Enter')mfaEnrollVerify()"><button class="btn g" ${b} onclick="mfaEnrollVerify()">${tt("Verificar y activar","Verify and enable","Verifiëren en activeren")}</button><button class="lnk" onclick="mfaEnrollCancel()">${tt("Cancelar","Cancel","Annuleren")}</button>`;
+ else if(ver.length)h+=`<p class="mut sm">✅ ${tt("Activado. Te pediremos un código al iniciar sesión.","Enabled. We'll ask for a code when you sign in.","Actief. We vragen een code bij het inloggen.")}</p>`+ver.map(f=>`<div class="row" style="justify-content:space-between;gap:8px"><span class="mut sm">📱 ${esc(f.friendly_name||"TOTP")}</span><button class="lnk" ${b} onclick="mfaRemove('${f.id}')">${tt("Quitar","Remove","Verwijderen")}</button></div>`).join("")+`<button class="btn" style="margin-top:8px" ${b} onclick="mfaEnroll()">${tt("Añadir otro dispositivo (copia de seguridad)","Add another device (backup)","Nog een apparaat toevoegen (back-up)")}</button><p class="mut sm">${tt("Si pierdes el móvil no hay códigos de recuperación: por eso conviene tener un segundo dispositivo registrado.","If you lose your phone there are no recovery codes, so it's wise to register a second device.","Als je je telefoon kwijtraakt zijn er geen herstelcodes; registreer dus een tweede apparaat.")}</p>`;
+ else h+=`<p class="mut sm">${tt("Añade una capa extra de seguridad: además de la contraseña, un código de tu app de autenticación.","Add an extra layer of security: besides your password, a code from your authenticator app.","Voeg een extra beveiligingslaag toe: naast je wachtwoord een code uit je authenticator-app.")}</p><button class="btn" ${b} onclick="mfaEnroll()">${tt("Activar 2FA","Enable 2FA","2FA activeren")}</button>`;
+ return h+m+`</div>`}
 function cloudCard(){if(!SBon())return"";
  const m=cmsg?`<div class="mut sm c" style="margin-top:8px">${esc(cmsg)}</div>`:"";
  return `<div class="card bx" style="margin-top:18px"><b>☁️ ${tt("Cuenta y nube","Account & cloud","Account en cloud")}</b>`+(AU
- ?`<p class="mut sm">${tt("Conectado como","Signed in as","Ingelogd als")} <b>${esc(AU.m)}</b></p><button class="btn" ${cbusy?"disabled":""} onclick="cnow()">${tt("Sincronizar ahora","Sync now","Nu synchroniseren")}</button><button class="lnk" onclick="cout()">${tt("Cerrar sesión","Sign out","Uitloggen")}</button>`
+ ?`<p class="mut sm">${tt("Conectado como","Signed in as","Ingelogd als")} <b>${esc(AU.m)}</b></p><button class="btn" ${cbusy?"disabled":""} onclick="cnow()">${tt("Sincronizar ahora","Sync now","Nu synchroniseren")}</button><button class="lnk" onclick="cout()">${tt("Cerrar sesión","Sign out","Uitloggen")}</button>`+mfaCard()
  :`<p class="mut sm">${tt("Guarda tu progreso y juega desde cualquier dispositivo.","Save your progress and play from any device.","Bewaar je voortgang en speel op elk apparaat.")}</p><input id="cE" class="inp" type="email" autocomplete="email" maxlength="120" placeholder="email" value="${esc(cEm)}"><input id="cP" class="inp" type="password" autocomplete="current-password" maxlength="72" placeholder="${tt("contraseña (mín. 8)","password (min. 8)","wachtwoord (min. 8)")}" onkeydown="if(event.key=='Enter')cgo('i')"><button class="btn g" ${cbusy?"disabled":""} onclick="cgo('i')">${tt("Entrar","Sign in","Inloggen")}</button><button class="btn" style="margin-top:8px" ${cbusy?"disabled":""} onclick="cgo('s')">${tt("Crear cuenta","Create account","Account maken")}</button><button class="lnk" onclick="cgo('m')">${tt("Enviarme un enlace mágico","Email me a magic link","Stuur me een magische link")}</button>`)+m+`</div>`}
 {const p0=perfil;perfil=()=>p0()+cloudCard()}
 addEventListener("visibilitychange",()=>{if(document.hidden&&ctm)cpush()});
 const MLK=/access_token=/.test(location.hash);
 try{AS=SBon()&&!AU&&!MLK&&!localStorage.getItem("bitty_guest")?1:0}catch(e){AS=0}
 (async()=>{if(!SBon())return;
- if(MLK){try{const q=new URLSearchParams(location.hash.slice(1)),a=q.get("access_token"),u=await sbf("/auth/v1/user",{},a);AU={a,r:q.get("refresh_token")||"",e:Date.now()+(+q.get("expires_in")||3600)*1000,id:u.id,m:u.email||""};asave();history.replaceState(null,"",location.pathname+location.search);AS=0;if(q.get("type")=="recovery"){BRC=1;return bwnp()}}catch(e){AS=1;history.replaceState(null,"",location.pathname+location.search);return wl()}}
+ if(MLK){try{const q=new URLSearchParams(location.hash.slice(1)),a=q.get("access_token"),u=await sbf("/auth/v1/user",{},a);const rr={access_token:a,refresh_token:q.get("refresh_token")||"",expires_in:+q.get("expires_in")||3600,user:u},rec=q.get("type")=="recovery";history.replaceState(null,"",location.pathname+location.search);if(mfaGate(rr,()=>{if(rec){BRC=1;return bwnp()}return S.track?home():welcome()}))return;setAU(rr);AS=0;if(rec){BRC=1;return bwnp()}}catch(e){AS=1;history.replaceState(null,"",location.pathname+location.search);return wl()}}
  if(AU){try{await csync();if(!L)home()}catch(e){}}})();
 document.documentElement.lang=S.lang;
 AS?wl():S.track?home():welcome();

@@ -181,6 +181,67 @@ const uuid = i => "aaaaaaaa-0000-0000-0000-" + String(i).padStart(12, "0");
   q = await as("authenticated", M, "select public.aal_ok() r");
   ok(q.r && q.r.rows[0].r === true, "factor sin verificar (inscripción a medias) no bloquea");
 
+  // 10c. activity_log (vista sobre xp_events) y question_history
+  q = await as("authenticated", B, "select count(*)::int c from public.activity_log");
+  ok(q.r && q.r.rows[0].c > 500, "B ve su propia actividad en activity_log");
+  q = await as("authenticated", C, "select count(*)::int c from public.activity_log");
+  ok(q.r && q.r.rows[0].c === 1, "C solo ve la suya (1 evento de anuncio), no la de B: " + (q.r && q.r.rows[0].c));
+  q = await as("authenticated", B, "insert into public.activity_log (id,user_id,kind,ref,xp,day) values (gen_random_uuid(),$1,'level','x',10,current_date)", [B]);
+  ok(q.e, "activity_log es de solo lectura");
+  q = await as("anon", "", "select * from public.activity_log");
+  ok(q.e, "anon no puede leer activity_log");
+  q = await as("authenticated", M, "select count(*)::int c from public.activity_log");
+  await db.exec("update auth.mfa_factors set status='verified'");
+  q = await as("authenticated", M, "select count(*)::int c from public.activity_log");
+  ok(q.r && q.r.rows[0].c === 0, "AAL1 con 2FA activo no ve su actividad");
+  q = await as("authenticated", M, "select count(*)::int c from public.activity_log", [], "aal2");
+  ok(q.r && q.r.rows[0].c >= 1, "AAL2 sí ve su actividad");
+
+  q = await as("authenticated", B, "select public.add_question_history($1::jsonb) r", [JSON.stringify([{ k: "p1", t: "g", d: 1 }, { k: "p2", t: "g", d: 1 }, { k: "p1", t: "g", d: 1 }, { k: "p1", t: "py", d: 1 }])]);
+  ok(q.r && q.r.rows[0].r === 3, "se guardan 3 entradas únicas (la repetida se ignora): " + (q.r && q.r.rows[0].r));
+  q = await as("authenticated", B, "select public.add_question_history($1::jsonb) r", [JSON.stringify([{ k: "x", t: "zz", d: 1 }, { k: "x", t: "g", d: 9 }, { k: "", t: "g", d: 1 }])]);
+  ok(q.r && q.r.rows[0].r === 0, "entradas inválidas (ruta, dificultad, clave vacía) se descartan");
+  q = await as("authenticated", B, "select public.add_question_history($1::jsonb)", [JSON.stringify(Array.from({ length: 501 }, (_, i) => ({ k: "k" + i, t: "g", d: 0 })))]);
+  ok(q.e && /invalid_args/.test(q.e), "más de 500 por llamada se rechaza");
+  q = await as("authenticated", C, "select count(*)::int c from public.question_history");
+  ok(q.r && q.r.rows[0].c === 0, "C no ve el historial de B");
+  q = await as("authenticated", B, "insert into public.question_history (user_id,qkey,track,difficulty) values ($1,'z','g',0)", [B]);
+  ok(q.e, "no se puede escribir en question_history directamente");
+  q = await as("authenticated", B, "delete from public.question_history");
+  ok(q.e, "no se puede borrar de question_history directamente");
+  q = await as("anon", "", "select public.add_question_history('[]'::jsonb)");
+  ok(q.e, "anon no puede llamar a add_question_history");
+  q = await as("authenticated", M, "select public.add_question_history('[]'::jsonb)");
+  ok(q.e && /mfa_required/.test(q.e), "AAL1 con 2FA activo no puede escribir el historial");
+  // tope de 40.000: se descartan las más antiguas
+  await db.exec(`insert into public.question_history (user_id,qkey,track,difficulty,seen_at)
+    select '${C}', 'old' || i, 'g', 0, now() - interval '1 day' - (i || ' seconds')::interval from generate_series(1, 40000) i;`);
+  q = await as("authenticated", C, "select public.add_question_history($1::jsonb) r", [JSON.stringify([{ k: "nuevaA", t: "g", d: 0 }, { k: "nuevaB", t: "g", d: 0 }])]);
+  const tot = (await db.query(`select count(*)::int c from public.question_history where user_id='${C}'`)).rows[0].c;
+  const nuevas = (await db.query(`select count(*)::int c from public.question_history where user_id='${C}' and qkey like 'nueva%'`)).rows[0].c;
+  const viejaBorrada = (await db.query(`select count(*)::int c from public.question_history where user_id='${C}' and qkey='old40000'`)).rows[0].c;
+  ok(tot === 40000 && nuevas === 2 && viejaBorrada === 0, `tope 40.000: total ${tot}, nuevas conservadas ${nuevas}, la más antigua descartada ${viejaBorrada === 0}`);
+
+  // 10d. eliminar la propia cuenta
+  const D1 = "66666666-6666-6666-6666-666666666666", D2 = "77777777-7777-7777-7777-777777777777";
+  await db.exec(`insert into auth.users values ('${D1}'), ('${D2}')`);
+  await as("authenticated", D1, "select public.award_xp($1,'level','lv:d:1',10,$2)", [uuid(900), today]);
+  await as("authenticated", D1, "select public.add_question_history($1::jsonb)", [JSON.stringify([{ k: "a", t: "g", d: 0 }])]);
+  await as("authenticated", D1, "insert into public.progress (user_id, data) values ($1, '{}')", [D1]);
+  q = await as("anon", "", "select public.delete_my_account()");
+  ok(q.e, "anon no puede eliminar cuentas");
+  q = await as("authenticated", "", "select public.delete_my_account()");
+  ok(q.e && /not_authenticated/.test(q.e), "sin sesión no se elimina nada");
+  await db.exec(`insert into auth.mfa_factors (user_id, factor_type, status) values ('${D2}', 'totp', 'verified')`);
+  q = await as("authenticated", D2, "select public.delete_my_account()");
+  ok(q.e && /mfa_required/.test(q.e) && (await db.query(`select 1 from auth.users where id='${D2}'`)).rows.length === 1, "AAL1 con 2FA activo no puede eliminar la cuenta");
+  q = await as("authenticated", D1, "select public.delete_my_account()");
+  const left = async t => (await db.query(`select count(*)::int c from public.${t} where user_id='${D1}'`)).rows[0].c;
+  ok(q.r && (await db.query(`select 1 from auth.users where id='${D1}'`)).rows.length === 0, "el usuario elimina su cuenta");
+  ok((await left("xp_events")) === 0 && (await left("progress")) === 0 && (await left("question_history")) === 0 && (await db.query(`select 1 from public.stats where user_id='${D1}'`)).rows.length === 0,
+    "se borran en cascada su XP, progreso, estadísticas e historial");
+  ok((await db.query(`select 1 from auth.users where id='${D2}'`)).rows.length === 1 && (await db.query(`select 1 from auth.users where id='${B}'`)).rows.length === 1, "no se toca a ningún otro usuario");
+
   // 11. RLS de progress, profiles y borrado en cascada
   await as("authenticated", A, "insert into public.progress (user_id, data) values ($1, '{\"xp\":1}')", [A]);
   q = await as("authenticated", B, "select * from public.progress");

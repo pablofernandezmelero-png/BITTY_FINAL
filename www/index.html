@@ -1309,13 +1309,17 @@ async function cgo(k){if(cbusy||!SBon())return;const e=$("#cE"),p=$("#cP"),em=e?
  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){cmsg=tt("Escribe un email válido.","Enter a valid email.","Vul een geldig e-mailadres in.");return cre()}
  if(k!="m"&&pw.length<8){cmsg=tt("La contraseña necesita al menos 8 caracteres.","Password needs at least 8 characters.","Wachtwoord moet minstens 8 tekens hebben.");return cre()}
  cbusy=1;cmsg=tt("Conectando…","Connecting…","Verbinden…");cre();let done=0;
- try{if(k=="m"){await sbf("/auth/v1/otp?redirect_to="+encodeURIComponent(location.origin+location.pathname),{method:"POST",body:JSON.stringify({email:em,create_user:true})});cmsg=tt("Te hemos enviado un enlace mágico: ábrelo desde este dispositivo.","We sent you a magic link: open it on this device.","We hebben een magische link gestuurd: open die op dit apparaat.")}
+ try{if(k=="m"){await sbf("/auth/v1/otp"+RURL(),{method:"POST",body:JSON.stringify({email:em,create_user:true})});cmsg=tt("Te hemos enviado un enlace mágico: ábrelo desde este dispositivo.","We sent you a magic link: open it on this device.","We hebben een magische link gestuurd: open die op dit apparaat.")}
   else{const r=await sbf(k=="s"?"/auth/v1/signup":"/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email:em,password:pw})});
    if(r&&r.access_token){if(mfaGate(r,()=>{AS=0;cmsg="";return S.track?home():welcome()}))return;setAU(r);MF=null;await csync();done=1;cmsg=tt("¡Conectado! Tu progreso se guarda en la nube.","Connected! Your progress is saved in the cloud.","Verbonden! Je voortgang wordt in de cloud bewaard.")}
    else{amode="i";cmsg=tt("Cuenta creada. Revisa tu email para confirmarla y luego pulsa Entrar.","Account created. Check your email to confirm it, then tap Sign in.","Account gemaakt. Bevestig via je e-mail en tik daarna op Inloggen.")}}}
  catch(x){cmsg=tt("No se pudo: ","Could not: ","Mislukt: ")+x.message}
  cbusy=0;if(done&&AS){AS=0;cmsg="";return S.track?home():welcome()}cre()}
-const RURL=()=>"?redirect_to="+encodeURIComponent(location.origin+location.pathname);
+// Dirección a la que vuelven los enlaces de los correos. En la app Android el origen es https://localhost
+// (Supabase lo rechazaría), así que se usa la web publicada; en un navegador, la propia dirección.
+const WEB="https://pablofernandezmelero-png.github.io/BITTY_FINAL/";
+const RDR=()=>/^https?:$/.test(location.protocol)&&!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)?location.origin+location.pathname:WEB;
+const RURL=()=>"?redirect_to="+encodeURIComponent(RDR());
 async function bforgot(){if(cbusy||!SBon())return;const e=$("#cE"),em=e?e.value.trim():"";cEm=em;
  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){cmsg=tt("Escribe tu email y pulsa de nuevo.","Enter your email and tap again.","Vul je e-mail in en tik opnieuw.");return cre()}
  cbusy=1;cmsg=tt("Enviando…","Sending…","Versturen…");cre();
@@ -1387,10 +1391,20 @@ function mfaCard(){if(MF===null){mfaLoad();return""}
  else if(ver.length)h+=`<p class="mut sm">✅ ${tt("Activado. Te pediremos un código al iniciar sesión.","Enabled. We'll ask for a code when you sign in.","Actief. We vragen een code bij het inloggen.")}</p>`+ver.map(f=>`<div class="row" style="justify-content:space-between;gap:8px"><span class="mut sm">📱 ${esc(f.friendly_name||"TOTP")}</span><button class="lnk" ${b} onclick="mfaRemove('${f.id}')">${tt("Quitar","Remove","Verwijderen")}</button></div>`).join("")+`<button class="btn" style="margin-top:8px" ${b} onclick="mfaEnroll()">${tt("Añadir otro dispositivo (copia de seguridad)","Add another device (backup)","Nog een apparaat toevoegen (back-up)")}</button><p class="mut sm">${tt("Si pierdes el móvil no hay códigos de recuperación: por eso conviene tener un segundo dispositivo registrado.","If you lose your phone there are no recovery codes, so it's wise to register a second device.","Als je je telefoon kwijtraakt zijn er geen herstelcodes; registreer dus een tweede apparaat.")}</p>`;
  else h+=`<p class="mut sm">${tt("Añade una capa extra de seguridad: además de la contraseña, un código de tu app de autenticación.","Add an extra layer of security: besides your password, a code from your authenticator app.","Voeg een extra beveiligingslaag toe: naast je wachtwoord een code uit je authenticator-app.")}</p><button class="btn" ${b} onclick="mfaEnroll()">${tt("Activar 2FA","Enable 2FA","2FA activeren")}</button>`;
  return h+m+`</div>`}
+// Eliminar la cuenta (RGPD / Google Play): borra en el servidor todos los datos de la nube de este usuario.
+async function cdel(){if(cbusy||!AU)return;
+ if(!confirm(tt("¿Eliminar tu cuenta y todos tus datos de la nube? No se puede deshacer.","Delete your account and all your cloud data? This cannot be undone.","Je account en al je cloudgegevens verwijderen? Dit kan niet ongedaan worden gemaakt.")))return;
+ const w=tt("ELIMINAR","DELETE","VERWIJDEREN"),r=prompt(tt("Escribe ELIMINAR para confirmar.","Type DELETE to confirm.","Typ VERWIJDEREN om te bevestigen."));
+ if(!r||r.trim().toUpperCase()!=w)return;
+ cbusy=1;cmsg=tt("Eliminando…","Deleting…","Verwijderen…");cre();
+ try{const t=await tok();await sbf("/rest/v1/rpc/delete_my_account",{method:"POST",body:"{}"},t);
+  clearTimeout(ctm);AU=null;MF=null;ME=null;MP=null;asave();try{localStorage.removeItem("bitty_owner");localStorage.removeItem("bitty_guest")}catch(e){}xevs([]);
+  cmsg=tt("Cuenta eliminada. Tu progreso en este dispositivo sigue guardado.","Account deleted. Your progress on this device is still saved.","Account verwijderd. Je voortgang op dit apparaat blijft bewaard.");cbusy=0;AS=1;return wl()}
+ catch(x){cmsg=tt("No se pudo eliminar: ","Could not delete: ","Verwijderen mislukt: ")+x.message}cbusy=0;cre()}
 function cloudCard(){if(!SBon())return"";
  const m=cmsg?`<div class="mut sm c" style="margin-top:8px">${esc(cmsg)}</div>`:"";
  return `<div class="card bx" style="margin-top:18px"><b>☁️ ${tt("Cuenta y nube","Account & cloud","Account en cloud")}</b>`+(AU
- ?`<p class="mut sm">${tt("Conectado como","Signed in as","Ingelogd als")} <b>${esc(AU.m)}</b></p><button class="btn" ${cbusy?"disabled":""} onclick="cnow()">${tt("Sincronizar ahora","Sync now","Nu synchroniseren")}</button><button class="lnk" onclick="cout()">${tt("Cerrar sesión","Sign out","Uitloggen")}</button>`+mfaCard()
+ ?`<p class="mut sm">${tt("Conectado como","Signed in as","Ingelogd als")} <b>${esc(AU.m)}</b></p><button class="btn" ${cbusy?"disabled":""} onclick="cnow()">${tt("Sincronizar ahora","Sync now","Nu synchroniseren")}</button><button class="lnk" onclick="cout()">${tt("Cerrar sesión","Sign out","Uitloggen")}</button>`+mfaCard()+`<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(128,128,128,.25)"><button class="lnk" ${cbusy?"disabled":""} onclick="cdel()">${tt("Eliminar mi cuenta y mis datos","Delete my account and data","Mijn account en gegevens verwijderen")}</button></div>`
  :`<p class="mut sm">${tt("Guarda tu progreso y juega desde cualquier dispositivo.","Save your progress and play from any device.","Bewaar je voortgang en speel op elk apparaat.")}</p><input id="cE" class="inp" type="email" autocomplete="email" maxlength="120" placeholder="email" value="${esc(cEm)}"><input id="cP" class="inp" type="password" autocomplete="current-password" maxlength="72" placeholder="${tt("contraseña (mín. 8)","password (min. 8)","wachtwoord (min. 8)")}" onkeydown="if(event.key=='Enter')cgo('i')"><button class="btn g" ${cbusy?"disabled":""} onclick="cgo('i')">${tt("Entrar","Sign in","Inloggen")}</button><button class="btn" style="margin-top:8px" ${cbusy?"disabled":""} onclick="cgo('s')">${tt("Crear cuenta","Create account","Account maken")}</button><button class="lnk" onclick="cgo('m')">${tt("Enviarme un enlace mágico","Email me a magic link","Stuur me een magische link")}</button>`)+m+`</div>`}
 {const p0=perfil;perfil=()=>p0()+cloudCard()}
 addEventListener("visibilitychange",()=>{if(document.hidden&&ctm)cpush()});

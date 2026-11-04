@@ -22,10 +22,11 @@ const dom=new JSDOM(html.replace(/<link[^>]*fonts.googleapis[^>]*>/g,""),{runScr
      if(m[2]=="/challenge"){db.chal["c"+id]=id;return R(200,{id:"c"+id})}
      if(m[2]=="/verify"){if(db.chal[b.challenge_id]!=id||b.code!=totp(db.sec[id]))return R(400,{message:"Invalid TOTP code entered"});f.status="verified";db.aal2=(db.aal2||0)+1;return R(200,{access_token:jwt("aal2"),refresh_token:"R2",expires_in:3600,user:{id:db.cur,email:"x@y.z"}})}
      if(o.method=="DELETE"){db.fac[db.cur]=db.fac[db.cur].filter(x=>x.id!=id);return R(200,{id})}}}
+   if(u.pathname=="/rest/v1/rpc/delete_my_account"){db.del=(db.del||0)+1;if(db.delFail)return R(400,{message:"mfa_required"});db.deleted=db.cur;return R(200,null)}
    if(u.pathname=="/auth/v1/signup")return R(200,{id:"u2",email:b.email});
-   if(u.pathname=="/auth/v1/otp")return R(200,{});
+   if(u.pathname=="/auth/v1/otp"){db.otpRedir=u.searchParams.get("redirect_to");return R(200,{})}
    if(u.pathname=="/auth/v1/logout")return R(204,null);
-   if(u.pathname=="/auth/v1/recover"){db.rec=b.email;return R(200,{})}
+   if(u.pathname=="/auth/v1/recover"){db.rec=b.email;db.redir=u.searchParams.get("redirect_to");return R(200,{})}
    if(u.pathname=="/auth/v1/user"&&o.method=="PUT"){db.newpw=b.password;return R(200,{})}
    if(u.pathname=="/rest/v1/profiles"){db.profiles=b;return R(201,null)}
    if(u.pathname=="/rest/v1/stats"){if(o.method=="POST"){db.statsWrites=(db.statsWrites||0)+1;return R(403,{message:"permission denied for table stats"})}
@@ -80,6 +81,7 @@ const setf=(e,p)=>ev(`document.querySelector("#cE").value=${JSON.stringify(e)};$
  ev(`AS=1;wl()`);ok("enlace olvidé contraseña visible",/Olvidaste tu contraseña/.test(T()));
  setf("","");ev(`bforgot()`);await sleep(50);ok("recuperar sin email pide email",/Escribe tu email/.test(T())&&!db.rec);
  setf("a@b.com","");ev(`bforgot()`);await sleep(100);ok("recuperar envía petición",db.rec=="a@b.com"&&/enlace para restablecer/.test(T()));
+ ok("los enlaces del correo apuntan a la web publicada (no a localhost)",db.redir=="https://pablofernandezmelero-png.github.io/BITTY_FINAL/"&&db.otpRedir=="https://pablofernandezmelero-png.github.io/BITTY_FINAL/");
  setf("a@b.com","password1");ev(`cgo("i")`);await sleep(250);
  ev(`BRC=1;bwnp()`);ok("pantalla nueva contraseña",/Nueva contraseña/.test(T()));
  ev(`document.querySelector("#cN1").value="corta";document.querySelector("#cN2").value="corta";bnpw()`);await sleep(50);ok("pass nueva corta rechazada",/al menos 8/.test(T())&&!db.newpw);
@@ -132,4 +134,14 @@ const setf=(e,p)=>ev(`document.querySelector("#cE").value=${JSON.stringify(e)};$
  const size=JSON.stringify(db.rows.u1.data).length;
  ok("progreso enorme ("+Math.round(big/1e6*10)/10+" MB): la copia que se sube cabe en 2 MB",big>2e6&&pushed===true&&size<2e6&&size>1000);
  ok("lo local no se recorta, solo la copia subida",ev(`S.hist.length`)==40000&&db.rows.u1.data.hist.length<40000&&db.rows.u1.data.hist.length>=500);
+ // ===== eliminar cuenta =====
+ await ev(`cout()`);await sleep(100);setf("a@b.com","password1");ev(`cgo("i")`);await sleep(300);
+ ev(`tab="p";home()`);await sleep(200);
+ ok("el perfil ofrece eliminar la cuenta",/Eliminar mi cuenta/.test(T()));
+ w.confirm=()=>false;await ev(`cdel()`);ok("si no confirma, no se elimina nada",!db.del&&ev(`AU`)!==null);
+ w.confirm=()=>true;w.prompt=()=>"no";await ev(`cdel()`);ok("si escribe otra palabra, no se elimina",!db.del&&ev(`AU`)!==null);
+ w.prompt=()=>"eliminar";db.delFail=1;await ev(`cdel()`);await sleep(100);ok("si el servidor lo rechaza, se avisa y la sesión sigue",db.del==1&&ev(`AU`)!==null&&/No se pudo eliminar/.test(T()));
+ db.delFail=0;ev(`S.xp=123;save()`);await ev(`cdel()`);await sleep(200);
+ ok("confirmando: llama al servidor, cierra sesión y vuelve al login",db.del==2&&db.deleted=="u1"&&ev(`AU`)===null&&!!w.document.querySelector("#cE")&&/Cuenta eliminada/.test(T()));
+ ok("el progreso local no se borra",ev(`S.xp`)==123);
  console.log(out.join("\n"));console.log("ERRORES JS:",errs.length);errs.forEach(e=>console.log(e));process.exit(out.some(x=>x.startsWith("FALLO"))||errs.length?1:0)})();

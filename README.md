@@ -2,7 +2,17 @@
 
 App educativa de informática (español, inglés y neerlandés). Una sola página web (`www/index.html`) empaquetada como app Android con Capacitor.
 
-> Estado: **en desarrollo**. Lo hecho, lo simulado y lo pendiente están en [Estado del proyecto](#estado-del-proyecto).
+> Estado: **en desarrollo, no terminada**. Lo hecho, lo simulado y lo pendiente están en [Estado del proyecto](#estado-del-proyecto) y, con todo detalle, en [`INFORME_FINAL_BITTY.md`](INFORME_FINAL_BITTY.md).
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [`INFORME_FINAL_BITTY.md`](INFORME_FINAL_BITTY.md) | Estado real, seguridad, veredicto y acciones del propietario |
+| [`CONFIGURACION_SUPABASE.md`](CONFIGURACION_SUPABASE.md) | Guía de migraciones, ajustes del panel y prueba con cuenta real |
+| [`COMPILACION_ANDROID.md`](COMPILACION_ANDROID.md) | Compilar APK/AAB, firma, variables de entorno y pruebas en móvil |
+| [`PUBLICACION_GOOGLE_PLAY.md`](PUBLICACION_GOOGLE_PLAY.md) | Lista de lo que falta para publicar |
+| [`PRUEBAS_Y_VALIDACION.md`](PRUEBAS_Y_VALIDACION.md) | Qué prueba cada suite y qué no |
 
 ## Estructura
 
@@ -12,7 +22,7 @@ App educativa de informática (español, inglés y neerlandés). Una sola págin
 | `content/questions-extra.js` | Preguntas ampliadas (fuente). `node tools/build-questions.js` las inserta en el HTML. |
 | `tools/` | `build-questions.js` (inserta preguntas) y `export-content.js` (genera la migración 006). |
 | `android/` | Proyecto Android generado por Capacitor. |
-| `supabase/migrations/` | Migraciones SQL versionadas (001–006). |
+| `supabase/migrations/` | Migraciones SQL versionadas (001–008). |
 | `tests/` | Pruebas automáticas (`npm test`). |
 | `.github/workflows/` | `android.yml` (APK de depuración), `android-release.yml` (firmado, manual), `pages.yml` (web). |
 
@@ -64,8 +74,10 @@ La URL y la clave **pública** (`sb_publishable_…`) están en `www/index.html`
 | 4 | `…004_secure_xp.sql` | XP validado en el servidor (`award_xp`, `import_legacy_stats`, `xp_events`); `stats` pasa a solo lectura |
 | 5 | `…005_content_schema.sql` | Tablas de contenido (cursos, categorías, lecciones, ejercicios, preguntas, respuestas), lectura pública |
 | 6 | `…006_content_seed.sql` | Carga las 1.144 preguntas y 212 lecciones actuales (idempotente, ~830 KB) |
+| 7 | `…007_activity_history.sql` | Vista `activity_log` y tabla `question_history` (el cliente aún no la usa) |
+| 8 | `…008_delete_account.sql` | `delete_my_account()`: el usuario elimina su cuenta y sus datos |
 
-Todas son **aditivas**: no borran datos ni reinician el progreso. La 004 conserva el XP existente como `base_xp`. Es seguro desplegar la web antes o después de aplicarlas: sin la 004 el XP se queda en local y se envía cuando exista.
+Guía completa en [`CONFIGURACION_SUPABASE.md`](CONFIGURACION_SUPABASE.md). Todas son **aditivas**: no borran datos ni reinician el progreso. La 004 conserva el XP existente como `base_xp`. Es seguro desplegar la web antes o después de aplicarlas: sin la 004 el XP se queda en local y se envía cuando exista.
 
 ### Ajustes del panel (no se pueden hacer desde el código)
 
@@ -86,10 +98,11 @@ Para producción (necesitas cuenta de Google AdMob): crea la app y las unidades 
 | Web publicada y APK de depuración | Hecho | Workflows en GitHub; web idéntica al repositorio |
 | Conexión con Supabase y RLS de `progress`/`profiles`/`stats` | **Comprobado en el servicio real** | Lecturas/escrituras anónimas con la clave pública |
 | Registro, login, recuperación, sesiones, sincronización | Simulación | Servidor simulado; **falta probar con una cuenta real** |
-| XP validado en servidor (migración 004) | Probado en PostgreSQL real; **sin aplicar aún en tu proyecto** | `tests/sql.test.js` |
+| XP validado en servidor (migración 004) | Probado en PostgreSQL real; **sin aplicar aún en tu proyecto: hasta entonces el XP de producción es manipulable** | `tests/sql.test.js` |
 | 2FA TOTP (cliente + AAL2 en servidor) | Simulación (TOTP real, GoTrue simulado) + SQL real; **falta activar MFA y probar con Authenticator** | `tests/cloud.test.js`, `tests/sql.test.js` |
 | Banco de preguntas (+115, 1.144 fijas + 74 generadores) | Hecho y verificado | `tests/bank.test.js` (código ejecutado, 0 duplicados) |
 | Base de datos de contenido (005/006) | Probada en PostgreSQL real; **sin aplicar aún** | `tests/content.test.js` |
+| Eliminar cuenta (008) y registro de actividad (007) | Probados en PostgreSQL real y con mock; **sin aplicar aún** | `tests/sql.test.js`, `tests/cloud.test.js` |
 | Anuncios | Simulación con IDs de prueba; **no probado en un móvil** | `tests/android.test.js` |
 | Botón atrás, aviso sin conexión, sin copias de seguridad | Simulación; **no probado en un móvil** | `tests/android.test.js` |
 | Firma de release y Google Play | Preparado; **faltan keystore y cuenta de Play** | — |

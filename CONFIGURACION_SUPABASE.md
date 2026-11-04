@@ -1,0 +1,84 @@
+# Configuración de Supabase
+
+Guía para el propietario del proyecto. Nada de esto se ha aplicado todavía en el proyecto real: **lo haces tú**, en el panel de Supabase. No se necesita ninguna clave secreta; basta con iniciar sesión en tu cuenta.
+
+> Estado real comprobado el 2026-11-04 con la clave pública: existen `progress`, `profiles` y `stats` (con RLS que bloquea al usuario anónimo); **no existen** `xp_events`, `courses`, `categories`, `lessons`, `exercises`, `questions`, `answers` ni la función `award_xp`. Es decir, las migraciones 003–008 están **sin aplicar**.
+
+## 1. Orden de las migraciones
+
+Se pegan en **SQL Editor → New query → Run**, una por una y en este orden. Todas son **aditivas** (no borran datos, no reinician el progreso) y se pueden ejecutar más de una vez.
+
+| # | Archivo | Qué hace | Depende de | Notas |
+|---|---|---|---|---|
+| 1 | `20261104000001_progress.sql` | `progress` + RLS | — | **Ya aplicada** |
+| 2 | `20261104000002_profiles_stats.sql` | `profiles`, `stats`, trigger de perfil | 1 | **Ya aplicada** |
+| 3 | `20261104000003_mfa_aal.sql` | `aal_ok()` y políticas restrictivas: con 2FA activo solo vale una sesión AAL2 | 1, 2 | Las cuentas sin 2FA no cambian |
+| 4 | `20261104000004_secure_xp.sql` | `xp_events`, `award_xp`, `import_legacy_stats`; `stats` pasa a solo lectura; el XP existente se conserva como `base_xp` | 2, 3 | Quita al cliente el permiso de escribir en `stats` |
+| 5 | `20261104000005_content_schema.sql` | Tablas de contenido con lectura pública y escritura prohibida | — | |
+| 6 | `20261104000006_content_seed.sql` | Carga 1.144 preguntas y 212 lecciones (~830 KB) | 5 | Idempotente. Si el editor se queda lento, espera: es un solo bloque |
+| 7 | `20261104000007_activity_history.sql` | Vista `activity_log` y tabla `question_history` con su función | 3, 4 | El cliente aún no usa `question_history` |
+| 8 | `20261104000008_delete_account.sql` | `delete_my_account()`: el usuario borra su propia cuenta y todos sus datos (cascada) | 3, 7 | Botón «Eliminar mi cuenta» en el Perfil. No verificado con Supabase real: requiere que la función pueda borrar de `auth.users` (patrón habitual de Supabase) |
+
+**Orden de despliegue web ↔ migraciones:** es indiferente. Sin la 004, la app guarda el XP en local y lo envía cuando exista la función. Si aplicas la 004 con una APK/web antiguas, estas siguen funcionando salvo que dejan de poder escribir en `stats` (el XP no se sincroniza hasta actualizar la app).
+
+## 2. Comprobar que se aplicaron bien
+
+Pega esto en el SQL Editor; todas las tablas deben salir con `rowsecurity = true`:
+
+```sql
+select tablename, rowsecurity from pg_tables where schemaname = 'public' order by 1;
+select count(*) from public.questions;   -- 1144 tras la migración 6
+select count(*) from public.lessons;     -- 212
+select proname from pg_proc where proname in ('award_xp','import_legacy_stats','aal_ok','add_question_history');  -- 4 filas
+```
+
+Y un control de que el XP existente sigue ahí (debe devolver tus filas con el mismo `xp`):
+
+```sql
+select user_id, xp, base_xp, streak from public.stats;
+```
+
+## 3. Ajustes del panel (no se pueden hacer desde el código)
+
+1. **Authentication → URL Configuration**
+   - *Site URL*: `https://pablofernandezmelero-png.github.io/BITTY_FINAL/`
+   - *Redirect URLs*: la misma dirección. (El cliente ya usa exactamente esa dirección para los correos, también desde la APK.)
+   - Sin esto los enlaces de confirmación, recuperación y enlace mágico apuntan a `localhost`.
+2. **Authentication → Sign In / Providers → Multi-Factor**: activar **TOTP** (Enroll + Verify). Sin esto, «Activar 2FA» devolverá un error.
+3. **Authentication → Sign In / Providers → Email**: decide si exiges confirmar el correo (hoy sí) y la longitud mínima de contraseña (la app exige 8).
+4. **Opcional pero recomendable**: *Project Settings → Authentication → SMTP* con un proveedor propio. El correo por defecto de Supabase tiene un límite bajo de envíos por hora y no es fiable para producción.
+
+## 4. Prueba real con una cuenta (la hace el propietario)
+
+Es lo único que convierte «simulado» en «comprobado». Con el correo que tú elijas:
+
+1. Abre la web publicada → *Crear cuenta* → recibe el correo → confirma. Anota si el enlace abre `…github.io/BITTY_FINAL/` (no `localhost`).
+2. Inicia sesión, juega un nivel y espera unos segundos. En Supabase → *Table Editor* deben aparecer filas en `progress`, `profiles` y `stats` (esta última, tras aplicar la 004, con `xp_events`).
+3. *Perfil → Activar 2FA*: escanea el QR con Google/Microsoft Authenticator, escribe el código. Cierra sesión y vuelve a entrar: debe pedir el código.
+4. *¿Olvidaste tu contraseña?* → correo → nueva contraseña → entra con ella.
+5. Desde un segundo dispositivo o navegador, inicia sesión y comprueba que el progreso y el XP son los mismos.
+
+Cuando lo hayas hecho, dime qué viste y lo documento como verificado con servicios reales.
+
+## 5. Pérdida del dispositivo autenticador
+
+Supabase **no ofrece códigos de recuperación** para TOTP, y Bitty no los inventa. Opciones reales:
+
+- **Prevención**: *Perfil → 2FA → Añadir otro dispositivo (copia de seguridad)*. Se pueden registrar varios factores.
+- **Si se pierde el único**: el propietario entra en *Authentication → Users*, abre al usuario y elimina su factor MFA; el usuario volverá a entrar solo con contraseña y podrá activar el 2FA de nuevo. Es un proceso manual y exige verificar la identidad de la persona por otro medio.
+
+## 6. Revertir (solo si hiciera falta)
+
+Las migraciones no destruyen datos. Si necesitaras desactivar el efecto del 2FA estricto:
+
+```sql
+drop policy if exists "progress_require_aal" on public.progress;
+drop policy if exists "profiles_require_aal" on public.profiles;
+drop policy if exists "stats_require_aal" on public.stats;
+```
+
+La 004 revoca permisos de escritura sobre `stats`; para volver al comportamiento antiguo habría que restaurarlos **y** reponer las políticas de insert/update, lo cual reabre la manipulación del XP: no se recomienda.
+
+## 7. Seguridad de claves
+
+La URL y la clave `sb_publishable_…` de `www/index.html` son públicas por diseño. **Nunca** pongas en el repositorio ni en la app la clave `secret`/`service_role` ni la contraseña de la base de datos.

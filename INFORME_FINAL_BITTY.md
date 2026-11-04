@@ -64,7 +64,7 @@ Corregido en esta sesión (no estaba pedido, lo encontré):
 `npm test` (código de salida 0), con el detalle en `PRUEBAS_Y_VALIDACION.md`:
 
 - Preguntas: 12.780 generadas sin errores. Banco: 1.213/1.213. Juego: 42 pasos.
-- Nube y 2FA (mock): 56/56. SQL (PostgreSQL embebido): 79/79. Contenido (PostgreSQL embebido): 44/44. Android y anuncios (mock): 30/30.
+- Nube y 2FA (mock): 57/57. SQL (PostgreSQL embebido): 100/100. Migraciones desde cero, repetidas y sobre estructura de producción: 38/38. Contenido (PostgreSQL embebido): 44/44. Android y anuncios (mock): 30/30. Mutaciones de reglas SQL: 23/23 detectadas.
 - Mutaciones: se rompieron reglas a propósito y los tests fallaron como debían (incluida una que demostró una fuga de datos entre usuarios sin `security_invoker`).
 - `npm audit`: 0 vulnerabilidades. Escaneo de secretos: limpio.
 
@@ -100,6 +100,9 @@ Guía: `CONFIGURACION_SUPABASE.md`.
 | Gravedad | Hallazgo | Estado |
 |---|---|---|
 | **ALTO** | El XP y las estadísticas de **producción** siguen siendo escribibles por el cliente hasta que se aplique la migración 004 | Solución escrita y probada; **abierto en producción** hasta aplicarla |
+| **ALTO** (corregido antes de aplicar) | La 004 inicial permitía triplicar el tope diario cambiando el campo `día` y cobrar XP con referencias inventadas | **Corregido**; ver `AUDITORIA_MIGRACIONES.md` (9 hallazgos H1–H9) |
+| MEDIO (corregido) | `progress`/`profiles` conservaban privilegios por defecto sobrantes (`TRUNCATE` no pasa por RLS) | **Corregido** en la 03, pendiente de aplicar |
+| MEDIO (corregido) | Bug de cliente: un rechazo por tope de 24 h bloqueaba toda la cola de XP | **Corregido** |
 | MEDIO | *Site URL* de Supabase en `localhost` → correos con enlaces rotos | Config externa pendiente |
 | MEDIO | Sin límite de intentos de login ni política de contraseña verificados en servidor | **No verificable** sin el panel |
 | MEDIO | Sesión y token de renovación en el almacenamiento local de la app (sin cifrado del sistema) | Mitigado: sin copias de seguridad. Cifrado nativo requeriría un plugin |

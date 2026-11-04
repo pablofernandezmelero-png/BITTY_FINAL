@@ -29,7 +29,8 @@ drop policy if exists "question_history_select_own" on public.question_history;
 drop policy if exists "question_history_require_aal" on public.question_history;
 create policy "question_history_select_own" on public.question_history for select to authenticated using (auth.uid() = user_id);
 create policy "question_history_require_aal" on public.question_history as restrictive for select to authenticated using (public.aal_ok());
-revoke insert, update, delete on public.question_history from anon, authenticated;
+revoke all on public.question_history from anon, authenticated;
+grant select on public.question_history to authenticated;
 
 -- p_items: [{"k": "texto-o-id", "t": "g", "d": 1}, ...]  (máx. 500 por llamada)
 create or replace function public.add_question_history(p_items jsonb)

@@ -1287,7 +1287,7 @@ async function xflush(t){if(xbusy||!AU||!SBon())return null;xbusy=1;let last=nul
    try{last=await sbf("/rest/v1/rpc/award_xp",{method:"POST",body:JSON.stringify({p_event_id:e.id,p_kind:e.kind,p_ref:e.ref,p_xp:e.xp,p_day:e.day})},t);q.shift();xevs(q);tries=0;if(q.length)await new Promise(r=>setTimeout(r,8300))}
    catch(err){const m=String((err&&err.message)||"");
     if(/rate_limited/.test(m)&&tries++<3){await new Promise(r=>setTimeout(r,8500));continue}
-    if(/invalid_|daily_cap/.test(m)){q.shift();xevs(q);continue}   // rechazo definitivo: se descarta
+    if(/invalid_|daily_cap|replay_cap|ad_cap/.test(m)){q.shift();xevs(q);continue}   // rechazo definitivo (o tope de 24 h): se descarta para no bloquear la cola
     break}}                                                        // sin conexión / error temporal: se conserva
   if(last&&typeof last.xp=="number"){S.xp=last.xp+xev().reduce((a,e)=>a+e.xp,0);save()}}
  finally{xbusy=0}return last}

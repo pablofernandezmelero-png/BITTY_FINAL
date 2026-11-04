@@ -13,6 +13,7 @@ App educativa de informática (español, inglés y neerlandés). Una sola págin
 | [`COMPILACION_ANDROID.md`](COMPILACION_ANDROID.md) | Compilar APK/AAB, firma, variables de entorno y pruebas en móvil |
 | [`PUBLICACION_GOOGLE_PLAY.md`](PUBLICACION_GOOGLE_PLAY.md) | Lista de lo que falta para publicar |
 | [`PRUEBAS_Y_VALIDACION.md`](PRUEBAS_Y_VALIDACION.md) | Qué prueba cada suite y qué no |
+| [`AUDITORIA_MIGRACIONES.md`](AUDITORIA_MIGRACIONES.md) | Veredicto de cada migración, hallazgos, orden de aplicación y riesgos residuales |
 
 ## Estructura
 

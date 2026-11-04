@@ -1,5 +1,5 @@
--- Bitty · migración 003: exigir AAL2 a las cuentas con 2FA activado
--- ADITIVA: solo crea una función y políticas RESTRICTIVAS. No borra ni modifica datos.
+-- Bitty · migración 003: exigir AAL2 a las cuentas con 2FA activado + privilegios mínimos en las tablas antiguas
+-- ADITIVA: crea una función y políticas RESTRICTIVAS, y RECORTA privilegios sobrantes (no datos). No borra ni modifica datos.
 -- Regla: si la cuenta tiene un factor TOTP verificado, solo las sesiones AAL2 (las que han
 -- introducido el código de 6 dígitos) pueden leer o escribir sus datos. Las cuentas sin 2FA no cambian.
 -- Requiere MFA/TOTP activado en Supabase (Authentication -> Sign In / Providers -> Multi-Factor).
@@ -29,3 +29,12 @@ create policy "profiles_require_aal" on public.profiles as restrictive for all t
   using (public.aal_ok()) with check (public.aal_ok());
 create policy "stats_require_aal" on public.stats as restrictive for all to authenticated
   using (public.aal_ok()) with check (public.aal_ok());
+
+-- ===== Privilegios mínimos en las tablas antiguas (progress y profiles) =====
+-- Supabase concede por defecto ALL a anon y authenticated sobre las tablas nuevas. RLS ya impide ver o
+-- modificar filas ajenas, pero TRUNCATE no pasa por RLS, y anon no necesita nada sobre datos privados.
+-- Se dejan solo los permisos que usa la app. (stats se ajusta en la migración 04.) Idempotente.
+revoke all on public.progress from anon;
+revoke truncate, references, trigger on public.progress from authenticated;      -- conserva select, insert, update, delete
+revoke all on public.profiles from anon;
+revoke delete, truncate, references, trigger on public.profiles from authenticated;  -- conserva select, insert, update

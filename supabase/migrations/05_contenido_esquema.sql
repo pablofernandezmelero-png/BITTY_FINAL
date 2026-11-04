@@ -97,6 +97,9 @@ create policy "answers_read"    on public.answers    for select to anon, authent
   using (exists (select 1 from public.questions q where q.id = question_id and q.active));
 
 -- Sin políticas de insert/update/delete + permisos retirados: la app no puede modificar el contenido.
-revoke insert, update, delete, truncate on
+revoke all on
   public.courses, public.categories, public.lessons, public.exercises, public.questions, public.answers
   from anon, authenticated;
+grant select on
+  public.courses, public.categories, public.lessons, public.exercises, public.questions, public.answers
+  to anon, authenticated;

@@ -33,7 +33,7 @@ const dom=new JSDOM(html.replace(/<link[^>]*fonts.googleapis[^>]*>/g,""),{runScr
      const id=u.searchParams.get("user_id").replace("eq.","");return R(200,db.st[id]?[{xp:db.st[id].xp}]:[])}
    if(u.pathname=="/rest/v1/rpc/import_legacy_stats"){db.imp=(db.imp||[]).concat([b]);if(!db.st[db.cur])db.st[db.cur]={xp:Math.min(b.p_xp,20000)};return R(200,{})}
    if(u.pathname=="/rest/v1/rpc/award_xp"){db.aw=(db.aw||[]).concat([b]);const s=db.st[db.cur]||(db.st[db.cur]={xp:0});db.seen=db.seen||{};
-     if(db.seen[b.p_event_id])return R(200,{awarded:0,duplicate:true,xp:s.xp});if(db.reject)return R(400,{message:"invalid_reward"});if(db.rate){db.rate=0;return R(400,{message:"rate_limited"})}
+     if(db.seen[b.p_event_id])return R(200,{awarded:0,duplicate:true,xp:s.xp});if(db.reject)return R(400,{message:"invalid_reward"});if(db.rejKind&&b.p_kind==db.rejKind)return R(400,{message:db.rejKind+"_cap"});if(db.rate){db.rate=0;return R(400,{message:"rate_limited"})}
      db.seen[b.p_event_id]=1;s.xp+=b.p_xp;return R(200,{awarded:b.p_xp,duplicate:false,xp:s.xp,streak:1})}
    if(u.pathname=="/rest/v1/progress"){if(o.method=="POST"){db.rows[b.user_id]=b;return R(201,null)}
      const id=u.searchParams.get("user_id").replace("eq.","");return R(200,db.rows[id]?[{data:db.rows[id].data}]:[])}
@@ -134,6 +134,13 @@ const setf=(e,p)=>ev(`document.querySelector("#cE").value=${JSON.stringify(e)};$
  const size=JSON.stringify(db.rows.u1.data).length;
  ok("progreso enorme ("+Math.round(big/1e6*10)/10+" MB): la copia que se sube cabe en 2 MB",big>2e6&&pushed===true&&size<2e6&&size>1000);
  ok("lo local no se recorta, solo la copia subida",ev(`S.hist.length`)==40000&&db.rows.u1.data.hist.length<40000&&db.rows.u1.data.hist.length>=500);
+ // ===== un rechazo definitivo (tope de 24 h) no bloquea el resto de la cola =====
+ await ev(`cout()`);await sleep(100);setf("a@b.com","password1");ev(`cgo("i")`);await sleep(300);
+ db.rejKind="replay";db.aw=[];const day=ev(`S.last`)||new Date().toISOString().slice(0,10);
+ w.localStorage.setItem("bitty_xq",JSON.stringify([{id:"11111111-1111-4111-8111-111111111111",kind:"replay",ref:"re:11111111-1111-4111-8111-111111111111",xp:5,day},{id:"22222222-2222-4222-8222-222222222222",kind:"level",ref:"lv:g:0:3",xp:10,day}]));
+ await ev(`xflush(null)`);await sleep(100);
+ ok("un evento rechazado por tope (replay_cap) se descarta y el siguiente SÍ se envía",db.aw.length==2&&db.aw[1].p_kind=="level"&&JSON.parse(w.localStorage.getItem("bitty_xq")||"[]").length==0);
+ db.rejKind=null;
  // ===== eliminar cuenta =====
  await ev(`cout()`);await sleep(100);setf("a@b.com","password1");ev(`cgo("i")`);await sleep(300);
  ev(`tab="p";home()`);await sleep(200);

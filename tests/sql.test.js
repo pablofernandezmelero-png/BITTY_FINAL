@@ -120,8 +120,8 @@ const uuid = i => "aaaaaaaa-0000-0000-0000-" + String(i).padStart(12, "0");
   await db.exec(`insert into public.xp_events (id,user_id,kind,ref,xp,day,created_at)
     select ('bbbbbbbb-0000-0000-0000-' || lpad(i::text,12,'0'))::uuid, '${B}', 'replay', 'fill' || i, 5, current_date, now() - interval '1 hour'
     from generate_series(1, 595) i;`);
-  q = await award(B, uuid(60), "replay", "replay:x", 5, today);
-  ok(q.e && /daily_cap/.test(q.e), "se alcanza el tope diario de 3000 XP");
+  q = await award(B, uuid(60), "replay", "re:" + uuid(777), 5, today);
+  ok(q.e && /daily_cap|replay_cap/.test(q.e), "se alcanza un tope (3000 XP/24 h o repeticiones): " + q.e);
 
   // 10. Importación del progreso local: una vez, con tope
   q = await as("authenticated", OLD, "select public.import_legacy_stats(5000, 4, current_date, 20) r");
@@ -133,6 +133,50 @@ const uuid = i => "aaaaaaaa-0000-0000-0000-" + String(i).padStart(12, "0");
   q = await as("authenticated", C, "select public.import_legacy_stats(1, 1, current_date, 1) r");
   ok(q.r && q.r.rows[0].r.imported === false && (await xpOf(C)).xp === 20000, "segunda importación ignorada");
 
+  // 5b. Referencias inventadas, retos validados, topes con la hora del SERVIDOR
+  const F = "88888888-8888-8888-8888-888888888888", G = "99999999-9999-9999-9999-999999999999", H = "abababab-abab-abab-abab-abababababab", E = "cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd";
+  await db.exec(`insert into auth.users values ('${F}'), ('${G}'), ('${H}'), ('${E}')`);
+  for (const [k, ref, xp, why] of [["level", "lv:g:1:100", 10, "posición de 3 cifras"], ["level", "lv:g:3:1", 10, "dificultad 3"], ["level", "lv:x:0:1", 10, "ruta inexistente"],
+    ["level", "cualquier-cosa", 10, "referencia libre"], ["special", "sp:100:1", 50, "especial de 3 cifras"], ["replay", "re:no-es-uuid", 5, "replay sin uuid"], ["replay", "lv:g:0:1", 5, "replay con ref de nivel"]]) {
+    await slow(); q = await award(E, uuid(1000 + Math.floor(Math.random() * 1e6)), k, ref, xp, today);
+    ok(q.e && /invalid_ref/.test(q.e), `referencia inventada rechazada (${why}): ${q.e}`);
+  }
+  const cE = [["d", today, 1, 80, true, "reto diario correcto"], ["d", today, 1, 50, false, "reto diario con XP de otra dificultad"], ["d", dayOf(-5), 0, 50, false, "reto diario de otra fecha"],
+    ["w", dayOf(-3), 2, 480, true, "reto semanal correcto"], ["w", dayOf(-30), 0, 180, false, "reto semanal antiguo"], ["w", today, 0, 480, false, "reto semanal con XP de otra dificultad"], ["d", "2026-02-31", 0, 50, false, "fecha imposible"]];
+  for (const [t, d, dif, xp, good, why] of cE) {
+    await slow(); q = await award(E, uuid(2000 + Math.floor(Math.random() * 1e6)), "challenge", `ch:${t}:${d}:${dif}`, xp, today);
+    ok(good ? q.r && q.r.rows[0].r.awarded === xp : q.e, `${why}: ${good ? "se concede" : "se rechaza"}`);
+  }
+  // tope de 24 h con hora del servidor: 2.990 XP con campo «día» repartido entre ayer, hoy y mañana
+  await db.exec(`insert into public.xp_events (id,user_id,kind,ref,xp,day,created_at)
+    select gen_random_uuid(), '${F}', 'special', 'x' || i, case when i <= 5 then 500 else 10 end, current_date + ((i % 3) - 1), now() - interval '1 hour'
+    from generate_series(1, 54) i;`);
+  const sumF = (await db.query(`select sum(xp)::int s from public.xp_events where user_id='${F}'`)).rows[0].s;
+  q = await award(F, uuid(3001), "level", "lv:g:0:7", 10, today);
+  ok(sumF === 2990 && q.r && q.r.rows[0].r.awarded === 10, "hasta 3000 XP en 24 h se concede (llevaba " + sumF + ")");
+  await slow();
+  q = await award(F, uuid(3002), "level", "lv:g:0:8", 10, dayOf(1));
+  ok(q.e && /daily_cap/.test(q.e), "cambiar el campo «día» NO evita el tope de 24 h: " + q.e);
+  // repeticiones: 500 XP por 24 h
+  await db.exec(`insert into public.xp_events (id,user_id,kind,ref,xp,day,created_at)
+    select gen_random_uuid(), '${G}', 'replay', 're:' || gen_random_uuid(), 5, current_date, now() - interval '1 hour' from generate_series(1, 99) i;`);
+  q = await award(G, uuid(3101), "replay", "re:" + uuid(3101), 5, today);
+  ok(q.r && q.r.rows[0].r.awarded === 5, "la repetición 100 (500 XP) se concede");
+  await slow();
+  q = await award(G, uuid(3102), "replay", "re:" + uuid(3102), 5, today);
+  ok(q.e && /replay_cap/.test(q.e), "la repetición 101 se rechaza (tope 500 XP/24 h): " + q.e);
+  q = await award(G, uuid(3103), "level", "lv:g:0:9", 10, today);
+  ok(q.r && q.r.rows[0].r.awarded === 10, "el tope de repeticiones no bloquea los niveles de primera vez");
+  // anuncios: 3 por 24 h aunque se cambie el día
+  await db.exec(`insert into public.xp_events (id,user_id,kind,ref,xp,day,created_at)
+    select gen_random_uuid(), '${H}', 'ad', 'ad:' || (current_date - 1)::text || ':' || i, 10, current_date - 1, now() - interval '2 hours' from generate_series(1, 3) i;`);
+  q = await award(H, uuid(3201), "ad", "ad:" + today + ":1", 10, today);
+  ok(q.e && /ad_cap/.test(q.e), "el 4.º anuncio en 24 h se rechaza aunque cambie el día: " + q.e);
+
+  // 10a-bis. importar progreso con eventos ya registrados (cuenta nueva que ya jugó): se rechaza y no cambia el XP
+  const xpA0 = (await xpOf(A)).xp;
+  q = await as("authenticated", A, "select public.import_legacy_stats(20000, 99, current_date, 500) r");
+  ok(q.r && q.r.rows[0].r.imported === false && (await xpOf(A)).xp === xpA0, "una cuenta con eventos de XP no puede importar progreso (xp " + xpA0 + " intacto)");
   // 10a. Bonus de anuncio recompensado: 10 XP, 3 al día, una vez por referencia
   await slow();
   q = await award(C, uuid(800), "ad", "ad:" + today + ":1", 10, today);
@@ -142,10 +186,10 @@ const uuid = i => "aaaaaaaa-0000-0000-0000-" + String(i).padStart(12, "0");
   ok(q.r && q.r.rows[0].r.awarded === 0, "el mismo bonus no se cobra dos veces");
   await slow();
   q = await award(C, uuid(802), "ad", "ad:" + today + ":4", 10, today);
-  ok(q.e && /invalid_reward/.test(q.e), "no existe un 4.º bonus al día");
+  ok(q.e && /invalid_ref/.test(q.e), "no existe un 4.º bonus al día");
   await slow();
   q = await award(C, uuid(803), "ad", "ad:" + dayOf(-1) + ":2", 10, today);
-  ok(q.e && /invalid_reward/.test(q.e), "la referencia del bonus debe ser la del día indicado");
+  ok(q.e && /invalid_ref/.test(q.e), "la referencia del bonus debe ser la del día indicado");
   await slow();
   q = await award(C, uuid(804), "ad", "ad:" + today + ":2", 20, today);
   ok(q.e && /invalid_reward/.test(q.e), "el bonus no puede valer más de 10");
@@ -167,9 +211,9 @@ const uuid = i => "aaaaaaaa-0000-0000-0000-" + String(i).padStart(12, "0");
   ok(q.e, "AAL1 con 2FA activo no escribe progreso");
   q = await as("authenticated", M, "insert into public.progress (user_id, data) values ($1, '{}')", [M], "aal2");
   ok(q.r, "AAL2 sí escribe progreso");
-  q = await as("authenticated", M, "select public.award_xp($1,'level','lv:m:1',10,$2)", [uuid(700), today]);
+  q = await as("authenticated", M, "select public.award_xp($1,'level','lv:g:0:1',10,$2)", [uuid(700), today]);
   ok(q.e && /mfa_required/.test(q.e), "AAL1 con 2FA activo no puede cobrar XP");
-  q = await as("authenticated", M, "select public.award_xp($1,'level','lv:m:1',10,$2) r", [uuid(701), today], "aal2");
+  q = await as("authenticated", M, "select public.award_xp($1,'level','lv:g:0:1',10,$2) r", [uuid(701), today], "aal2");
   ok(q.r && q.r.rows[0].r.awarded === 10, "AAL2 sí cobra XP");
   q = await as("authenticated", M, "select public.import_legacy_stats(5,1,null,1)");
   ok(q.e && /mfa_required/.test(q.e), "AAL1 con 2FA activo no puede importar");
@@ -225,7 +269,7 @@ const uuid = i => "aaaaaaaa-0000-0000-0000-" + String(i).padStart(12, "0");
   // 10d. eliminar la propia cuenta
   const D1 = "66666666-6666-6666-6666-666666666666", D2 = "77777777-7777-7777-7777-777777777777";
   await db.exec(`insert into auth.users values ('${D1}'), ('${D2}')`);
-  await as("authenticated", D1, "select public.award_xp($1,'level','lv:d:1',10,$2)", [uuid(900), today]);
+  await as("authenticated", D1, "select public.award_xp($1,'level','lv:g:0:2',10,$2)", [uuid(900), today]);
   await as("authenticated", D1, "select public.add_question_history($1::jsonb)", [JSON.stringify([{ k: "a", t: "g", d: 0 }])]);
   await as("authenticated", D1, "insert into public.progress (user_id, data) values ($1, '{}')", [D1]);
   q = await as("anon", "", "select public.delete_my_account()");

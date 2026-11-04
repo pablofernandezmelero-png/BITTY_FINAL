@@ -6,20 +6,20 @@ Guía para el propietario del proyecto. Nada de esto se ha aplicado todavía en 
 
 ## 1. Orden de las migraciones
 
-Se pegan en **SQL Editor → New query → Run**, una por una y en este orden. Todas son **aditivas** (no borran datos, no reinician el progreso). Las 003 a 008 se pueden repetir sin problema. **No repitas la 001 ni la 002 si ya las aplicaste**: no hace falta, y la versión antigua de la 001 daba el error «policy already exists» (inofensivo).
+Auditoría completa, veredicto por migración y hallazgos: [`AUDITORIA_MIGRACIONES.md`](AUDITORIA_MIGRACIONES.md). Se pegan en **SQL Editor → New query → Run**, una por una y en este orden. Todas son **aditivas** (no borran datos, no reinician el progreso). Las 003 a 008 se pueden repetir sin problema. **No repitas la 001 ni la 002 si ya las aplicaste**: no hace falta, y la versión antigua de la 001 daba el error «policy already exists» (inofensivo).
 
 | # | Archivo | Qué hace | Depende de | Notas |
 |---|---|---|---|---|
 | 1 | `01_progreso.sql` | `progress` + RLS | — | **Ya aplicada** |
 | 2 | `02_perfiles_y_estadisticas.sql` | `profiles`, `stats`, trigger de perfil | 1 | **Ya aplicada** |
-| 3 | `03_exigir_2fa.sql` | `aal_ok()` y políticas restrictivas: con 2FA activo solo vale una sesión AAL2 | 1, 2 | Las cuentas sin 2FA no cambian |
+| 3 | `03_exigir_2fa.sql` | `aal_ok()` y políticas restrictivas: con 2FA activo solo vale una sesión AAL2. Además recorta privilegios sobrantes de `progress` y `profiles` | 1, 2 | Las cuentas sin 2FA no cambian |
 | 4 | `04_xp_seguro.sql` | `xp_events`, `award_xp`, `import_legacy_stats`; `stats` pasa a solo lectura; el XP existente se conserva como `base_xp` | 2, 3 | Quita al cliente el permiso de escribir en `stats` |
 | 5 | `05_contenido_esquema.sql` | Tablas de contenido con lectura pública y escritura prohibida | — | |
 | 6 | `06_contenido_datos.sql` | Carga 1.144 preguntas y 212 lecciones (~830 KB) | 5 | Idempotente. Si el editor se queda lento, espera: es un solo bloque |
 | 7 | `07_actividad_e_historial.sql` | Vista `activity_log` y tabla `question_history` con su función | 3, 4 | El cliente aún no usa `question_history` |
 | 8 | `08_eliminar_cuenta.sql` | `delete_my_account()`: el usuario borra su propia cuenta y todos sus datos (cascada) | 3, 7 | Botón «Eliminar mi cuenta» en el Perfil. No verificado con Supabase real: requiere que la función pueda borrar de `auth.users` (patrón habitual de Supabase) |
 
-**Orden de despliegue web ↔ migraciones:** es indiferente. Sin la 004, la app guarda el XP en local y lo envía cuando exista la función. Si aplicas la 004 con una APK/web antiguas, estas siguen funcionando salvo que dejan de poder escribir en `stats` (el XP no se sincroniza hasta actualizar la app).
+**Orden de despliegue web ↔ migraciones:** la web de Pages ya tiene el cliente nuevo. **Instala la APK nueva antes de aplicar la 004**: los clientes antiguos dejan de poder escribir `stats` y, al actualizar, el servidor manda (el XP ganado con la versión antigua después de la 004 se perdería). Sin la 004, la app nueva guarda el XP en local y lo envía cuando exista la función.
 
 ## 2. Comprobar que se aplicaron bien
 

@@ -18,8 +18,9 @@ Se ejecutan todas con `npm test` (y las ejecutan automáticamente los workflows 
 | `tests/questions.test.js` | Local (jsdom) | 12.780 preguntas generadas, 0 errores | Todas las rutas × 3 dificultades × 3 idiomas: sin vacías, sin `NaN`/`undefined`, sin opciones repetidas |
 | `tests/bank.test.js` | Local | 1.213/1.213 | 0 duplicados ni casi duplicados entre las 115 nuevas y el resto, 3 idiomas, **18 respuestas verificadas ejecutando el código** (Python y Node), anti-repetición por antigüedad |
 | `tests/flow.test.js` | Local (jsdom) | 42 pasos | Jugar niveles y jefes ganando en 3 idiomas × 3 dificultades × 4 rutas |
-| `tests/cloud.test.js` | **Mock** | 56/56 | Registro, login, logout, recuperación, nueva contraseña, enlace mágico, invitado, fusión de progreso, importación, cola de XP, 2FA completo (con TOTP RFC 6238 real), recorte del historial a <2 MB, redirección de correos, eliminar cuenta |
-| `tests/sql.test.js` | **PGlite** | 79/79 | RLS entre usuarios, XP (validación, idempotencia, ritmo, tope diario, racha, anuncios), AAL1/AAL2, `activity_log`, `question_history`, `delete_my_account`, borrado en cascada |
+| `tests/cloud.test.js` | **Mock** | 57/57 | Registro, login, logout, recuperación, nueva contraseña, enlace mágico, invitado, fusión de progreso, importación, cola de XP, 2FA completo (con TOTP RFC 6238 real), recorte del historial a <2 MB, redirección de correos, eliminar cuenta |
+| `tests/sql.test.js` | **PGlite** | 100/100 | RLS entre usuarios, XP (validación, idempotencia, ritmo, tope diario, racha, anuncios), AAL1/AAL2, `activity_log`, `question_history`, `delete_my_account`, borrado en cascada |
+| `tests/migrations.test.js` | **PGlite** | 38/38 | Las 8 migraciones desde cero y **dos veces**; sobre una estructura equivalente a producción con datos (sin cambios en `progress`/`profiles`/`stats`); auditoría del catálogo (RLS, `search_path`, privilegios, vistas, claves ajenas) |
 | `tests/content.test.js` | **PGlite** | 44/44 | Integridad del contenido (1.144 preguntas, 212 lecciones), idempotencia, coincidencia con la app, permisos (lectura pública, escritura prohibida) |
 | `tests/android.test.js` | **Mock** (Capacitor y AdMob simulados) | 30/30 | Botón atrás, aviso sin conexión, banner/vídeo/frecuencia/consentimiento, no hay anuncios en niveles |
 
@@ -27,6 +28,7 @@ Se ejecutan todas con `npm test` (y las ejecutan automáticamente los workflows 
 
 Se rompieron reglas en una copia, se comprobó que el test falla y se restauró:
 
+- **Mutación sistemática de reglas SQL** (`node tools/mutation-sql.js`): 23 reglas de seguridad rotas una a una, **23 detectadas** (la primera ejecución dejó 2 sin detectar; eran huecos de los tests y se cubrieron). Detalle en `AUDITORIA_MIGRACIONES.md`.
 - Quitar el tope diario de XP y los permisos de `stats` → fallan 2 pruebas SQL.
 - Quitar el tope de 40.000 del historial y `security_invoker` de `activity_log` → fallan 3 pruebas (esta última mostró que, sin `security_invoker`, la vista filtraría datos de otros usuarios).
 - Provocar un fallo en el flujo de pruebas → `npm test` termina con error (antes devolvía siempre 0; corregido).

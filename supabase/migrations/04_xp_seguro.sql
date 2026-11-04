@@ -3,14 +3,16 @@
 --   * no borra ni reinicia ninguna fila; el XP que ya había se conserva como "base_xp";
 --   * a partir de ahora el cliente NO puede escribir en `stats`: solo lee, y el XP
 --     se suma llamando a la función `award_xp`, que valida cada recompensa.
--- Ejecútala en Supabase -> SQL Editor (después de la 003).
+-- Ejecútala en Supabase -> SQL Editor (después de la 003). Se puede ejecutar más de una vez.
+--
+-- Límites de abuso (el servidor NO puede saber si de verdad se jugó el nivel, así que acota el daño):
+--   * referencias de recompensa con formato fijo y una sola vez por cuenta (nivel, jefe, especial, reto);
+--   * 1 evento cada 8 s, 3.000 XP por cada 24 h, repeticiones (replay) 500 XP/24 h, anuncios 3/24 h;
+--   * todo se mide con la hora del SERVIDOR, no con la fecha que envía el cliente.
 
 -- ===== Columnas nuevas en stats =====
 alter table public.stats add column if not exists base_xp integer not null default 0 check (base_xp >= 0);
 alter table public.stats add column if not exists legacy_imported boolean not null default false;
-
--- Filas que ya existían: su XP actual pasa a ser la base y se marcan como importadas.
-update public.stats set base_xp = xp, legacy_imported = true where legacy_imported = false;
 
 -- ===== Registro de eventos de XP (auditable e idempotente) =====
 create table if not exists public.xp_events (
@@ -28,22 +30,33 @@ create index if not exists xp_events_user_created on public.xp_events (user_id, 
 create unique index if not exists xp_events_once on public.xp_events (user_id, ref)
   where kind in ('level','boss','special','challenge','ad');
 
+-- Filas de stats que ya existían ANTES de esta migración: su XP actual pasa a ser la base y se marcan
+-- como importadas. Solo se tocan las que no tienen eventos, así que repetir la migración no falsea nada.
+update public.stats s set base_xp = s.xp, legacy_imported = true
+where s.legacy_imported = false
+  and not exists (select 1 from public.xp_events e where e.user_id = s.user_id);
+
 alter table public.xp_events enable row level security;
 drop policy if exists "xp_events_select_own" on public.xp_events;
 create policy "xp_events_select_own" on public.xp_events for select to authenticated using (auth.uid() = user_id);
 drop policy if exists "xp_events_require_aal" on public.xp_events;
 create policy "xp_events_require_aal" on public.xp_events as restrictive for select to authenticated using (public.aal_ok());
--- Sin políticas de insert/update/delete: solo la función award_xp (security definer) escribe aquí.
-revoke insert, update, delete on public.xp_events from anon, authenticated;
+-- Solo lectura para el cliente (sin insert/update/delete/truncate): escribe únicamente award_xp (security definer).
+revoke all on public.xp_events from anon, authenticated;
+grant select on public.xp_events to authenticated;
 
 -- ===== stats pasa a ser de solo lectura para el cliente =====
 drop policy if exists "stats_insert_own" on public.stats;
 drop policy if exists "stats_update_own" on public.stats;
-revoke insert, update, delete on public.stats from anon, authenticated;
+revoke all on public.stats from anon, authenticated;
+grant select on public.stats to authenticated;
 
 -- ===== Función: conceder XP =====
--- Recompensas permitidas (idénticas a las de la app):
---   level 10 · boss 40 · special 50 · challenge 50/80/130 (diario) y 180/300/480 (semanal) · replay 5 · ad 10 (máx. 3 al día)
+-- Recompensas (idénticas a las de la app):
+--   level 10 · boss 40 · special 50 · challenge 50/80/130 (diario) y 180/300/480 (semanal) · replay 5 · ad 10
+-- Referencias admitidas:
+--   level/boss  lv:<ruta>:<dificultad 0-2>:<posición 0-99>      special  sp:<n>:<dificultad>
+--   challenge   ch:d|w:<AAAA-MM-DD>:<dificultad>                replay   re:<uuid>        ad  ad:<día>:1..3
 create or replace function public.award_xp(
   p_event_id uuid,
   p_kind     text,
@@ -56,13 +69,19 @@ security definer
 set search_path = ''
 as $$
 declare
-  uid       uuid := auth.uid();
-  v_stats   public.stats%rowtype;
-  v_today   date := (now() at time zone 'utc')::date;
-  v_last    timestamptz;
-  v_day_xp  integer;
-  v_streak  integer;
+  uid        uuid := auth.uid();
+  v_stats    public.stats%rowtype;
+  v_today    date := (now() at time zone 'utc')::date;
+  v_last     timestamptz;
+  v_day_xp   integer;
+  v_rep_xp   integer;
+  v_ads      integer;
+  v_streak   integer;
   v_inserted integer;
+  v_m        text[];
+  v_cdate    date;
+  v_dif      integer;
+  v_expected integer;
 begin
   if uid is null then
     raise exception 'not_authenticated' using errcode = '28000';
@@ -76,6 +95,11 @@ begin
   if p_ref !~ '^[a-z0-9:_-]{1,80}$' then
     raise exception 'invalid_ref' using errcode = '22023';
   end if;
+  -- la fecha del cliente (su zona horaria) solo puede diferir un día de la del servidor
+  if p_day < v_today - 1 or p_day > v_today + 1 then
+    raise exception 'invalid_day' using errcode = '22023';
+  end if;
+
   -- cantidad coherente con el tipo
   if not (
        (p_kind = 'level'     and p_xp = 10)
@@ -83,15 +107,43 @@ begin
     or (p_kind = 'special'   and p_xp = 50)
     or (p_kind = 'challenge' and p_xp in (50, 80, 130, 180, 300, 480))
     or (p_kind = 'replay'    and p_xp = 5)
-    -- bonus de anuncio recompensado: 10 XP, como mucho 3 por día (ref ad:AAAA-MM-DD:1..3, cobrable una sola vez)
-    or (p_kind = 'ad'        and p_xp = 10 and p_ref in ('ad:' || p_day::text || ':1', 'ad:' || p_day::text || ':2', 'ad:' || p_day::text || ':3'))
+    or (p_kind = 'ad'        and p_xp = 10)
   ) then
     raise exception 'invalid_reward' using errcode = '22023';
   end if;
-  -- la fecha del cliente (su zona horaria) solo puede diferir un día de la del servidor
-  if p_day < v_today - 1 or p_day > v_today + 1 then
-    raise exception 'invalid_day' using errcode = '22023';
+
+  -- formato de la referencia según el tipo (impide inventar referencias para cobrar XP infinito)
+  if p_kind in ('level', 'boss') then
+    if p_ref !~ '^lv:(g|py|js|java):[0-2]:[0-9]{1,2}$' then raise exception 'invalid_ref' using errcode = '22023'; end if;
+  elsif p_kind = 'special' then
+    if p_ref !~ '^sp:[0-9]{1,2}:[0-2]$' then raise exception 'invalid_ref' using errcode = '22023'; end if;
+  elsif p_kind = 'replay' then
+    if p_ref !~ '^re:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then raise exception 'invalid_ref' using errcode = '22023'; end if;
+  elsif p_kind = 'ad' then
+    if p_ref not in ('ad:' || p_day::text || ':1', 'ad:' || p_day::text || ':2', 'ad:' || p_day::text || ':3') then
+      raise exception 'invalid_ref' using errcode = '22023';
+    end if;
+  elsif p_kind = 'challenge' then
+    v_m := regexp_match(p_ref, '^ch:(d|w):([0-9]{4}-[0-9]{2}-[0-9]{2}):([0-2])$');
+    if v_m is null then raise exception 'invalid_ref' using errcode = '22023'; end if;
+    begin
+      v_cdate := v_m[2]::date;
+    exception when others then
+      raise exception 'invalid_ref' using errcode = '22023';
+    end;
+    v_dif := v_m[3]::integer;
+    if v_m[1] = 'd' then
+      v_expected := (array[50, 80, 130])[v_dif + 1];
+      if abs(v_cdate - p_day) > 1 then raise exception 'invalid_ref' using errcode = '22023'; end if;
+    else
+      v_expected := (array[180, 300, 480])[v_dif + 1];
+      if v_cdate < p_day - 7 or v_cdate > p_day + 1 then raise exception 'invalid_ref' using errcode = '22023'; end if;
+    end if;
+    if p_xp <> v_expected then raise exception 'invalid_reward' using errcode = '22023'; end if;
   end if;
+
+  -- un solo evento a la vez por usuario (evita carreras entre llamadas simultáneas)
+  perform pg_advisory_xact_lock(hashtextextended(uid::text, 0));
 
   -- reintento del mismo evento: no hace nada y devuelve el estado actual
   if exists (select 1 from public.xp_events where id = p_event_id) then
@@ -108,10 +160,21 @@ begin
   if v_last is not null and v_last > now() - interval '8 seconds' then
     raise exception 'rate_limited' using errcode = '54000';
   end if;
-  -- tope diario de XP
-  select coalesce(sum(xp), 0) into v_day_xp from public.xp_events where user_id = uid and day = p_day;
+  -- topes en las últimas 24 h, con la hora del servidor
+  select coalesce(sum(xp), 0),
+         coalesce(sum(xp) filter (where kind = 'replay'), 0),
+         count(*) filter (where kind = 'ad')
+    into v_day_xp, v_rep_xp, v_ads
+  from public.xp_events
+  where user_id = uid and created_at > now() - interval '24 hours';
   if v_day_xp + p_xp > 3000 then
     raise exception 'daily_cap' using errcode = '54000';
+  end if;
+  if p_kind = 'replay' and v_rep_xp + p_xp > 500 then
+    raise exception 'replay_cap' using errcode = '54000';
+  end if;
+  if p_kind = 'ad' and v_ads >= 3 then
+    raise exception 'ad_cap' using errcode = '54000';
   end if;
 
   insert into public.xp_events (id, user_id, kind, ref, xp, day)
@@ -153,7 +216,7 @@ $$;
 
 -- ===== Función: importar el progreso local (una sola vez por cuenta) =====
 -- Para quien jugó como invitado y luego crea cuenta. Es la única parte basada en confianza:
--- se acepta una vez, con tope, y no se puede repetir ni volver a subir.
+-- se acepta una vez, con tope (20.000 XP), y no se puede repetir ni sobrescribir.
 create or replace function public.import_legacy_stats(
   p_xp integer, p_streak integer, p_last date, p_levels integer
 ) returns jsonb
@@ -171,6 +234,7 @@ begin
   if not public.aal_ok() then
     raise exception 'mfa_required' using errcode = '28000';
   end if;
+  perform pg_advisory_xact_lock(hashtextextended(uid::text, 0));
   select * into v_stats from public.stats where user_id = uid;
   if found and (v_stats.legacy_imported or exists (select 1 from public.xp_events where user_id = uid)) then
     return jsonb_build_object('imported', false, 'xp', v_stats.xp, 'streak', v_stats.streak);
@@ -187,7 +251,13 @@ begin
     xp = excluded.xp, base_xp = excluded.base_xp, streak = excluded.streak,
     last_day = excluded.last_day, levels_done = excluded.levels_done,
     legacy_imported = true, updated_at = now()
+  where public.stats.legacy_imported = false
+    and not exists (select 1 from public.xp_events e where e.user_id = public.stats.user_id)
   returning * into v_stats;
+  if not found then
+    select * into v_stats from public.stats where user_id = uid;
+    return jsonb_build_object('imported', false, 'xp', coalesce(v_stats.xp, 0), 'streak', coalesce(v_stats.streak, 0));
+  end if;
   return jsonb_build_object('imported', true, 'xp', v_stats.xp, 'streak', v_stats.streak);
 end;
 $$;

@@ -1,0 +1,23 @@
+{
+  "name": "bitty",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bitty: aprende informatica jugando",
+  "scripts": {
+    "test": "node tests/questions.test.js && node tests/flow.test.js && node tests/cloud.test.js",
+    "sync": "cap sync android",
+    "android:debug": "cap sync android && cd android && gradlew assembleDebug"
+  },
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0"
+  },
+  "devDependencies": {
+    "jsdom": "^27.4.0"
+  }
+}

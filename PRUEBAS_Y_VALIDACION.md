@@ -11,28 +11,33 @@ Se ejecutan todas con `npm test` (y las ejecutan automáticamente los workflows 
 | **Servicio real (Supabase)** | Comportamiento real de la plataforma | — |
 | **Android físico** | La app en un móvil | — |
 
-## Suites (resultado del 2026-11-04 sobre el commit `3d2d97e` + cambios locales de esta sesión)
+## Suites (resultado del 2026-11-04 con los cambios locales de la auditoría; `npm test` termina con código 0)
 
 | Archivo | Nivel | Resultado | Qué cubre |
 |---|---|---|---|
+| `tests/static.test.js` | Análisis estático (parser acorn) | 12/12 | Sin `eval`/`document.write`, 276 traducciones con los 3 idiomas, 0 código muerto, 33 manejadores de la interfaz definidos (sin botones rotos), CSP restrictiva, solo clave pública en el cliente, accesibilidad básica |
 | `tests/questions.test.js` | Local (jsdom) | 12.780 preguntas generadas, 0 errores | Todas las rutas × 3 dificultades × 3 idiomas: sin vacías, sin `NaN`/`undefined`, sin opciones repetidas |
-| `tests/bank.test.js` | Local | 1.213/1.213 | 0 duplicados ni casi duplicados entre las 115 nuevas y el resto, 3 idiomas, **18 respuestas verificadas ejecutando el código** (Python y Node), anti-repetición por antigüedad |
+| `tests/bank.test.js` | Local | 1.213/1.213 | 0 duplicados ni casi duplicados, 3 idiomas, **18 respuestas verificadas ejecutando el código** (Python y Node), anti-repetición por antigüedad |
 | `tests/flow.test.js` | Local (jsdom) | 42 pasos | Jugar niveles y jefes ganando en 3 idiomas × 3 dificultades × 4 rutas |
-| `tests/cloud.test.js` | **Mock** | 57/57 | Registro, login, logout, recuperación, nueva contraseña, enlace mágico, invitado, fusión de progreso, importación, cola de XP, 2FA completo (con TOTP RFC 6238 real), recorte del historial a <2 MB, redirección de correos, eliminar cuenta |
-| `tests/sql.test.js` | **PGlite** | 100/100 | RLS entre usuarios, XP (validación, idempotencia, ritmo, tope diario, racha, anuncios), AAL1/AAL2, `activity_log`, `question_history`, `delete_my_account`, borrado en cascada |
-| `tests/migrations.test.js` | **PGlite** | 38/38 | Las 8 migraciones desde cero y **dos veces**; sobre una estructura equivalente a producción con datos (sin cambios en `progress`/`profiles`/`stats`); auditoría del catálogo (RLS, `search_path`, privilegios, vistas, claves ajenas) |
-| `tests/content.test.js` | **PGlite** | 44/44 | Integridad del contenido (1.144 preguntas, 212 lecciones), idempotencia, coincidencia con la app, permisos (lectura pública, escritura prohibida) |
-| `tests/android.test.js` | **Mock** (Capacitor y AdMob simulados) | 30/30 | Botón atrás, aviso sin conexión, banner/vídeo/frecuencia/consentimiento, no hay anuncios en niveles |
+| `tests/cloud.test.js` | **Mock** | 57/57 | Registro, login, logout, recuperación, enlace mágico, invitado, fusión, cola de XP, 2FA completo (TOTP RFC 6238 real), recorte del historial, redirección de correos, eliminar cuenta, rechazos por tope |
+| `tests/robustness.test.js` | **Mock** | 32/32 | Estado corrupto o de versión antigua, almacenamiento ausente o lleno, contenido hostil, sesión caducada, servidor 500 y sin red, **reinicio con eventos pendientes**, enlace con token de otra cuenta, botón de reinicio con y sin cuenta, nodos del mapa accesibles |
+| `tests/monkey.test.js` | Local (jsdom) | 10/10 · **6.000 acciones aleatorias** | 5 semillas fijas, pulsando controles visibles y escribiendo texto, sin red: sin excepciones ni estados absurdos. Encontró un fallo real |
+| `tests/sql.test.js` | **PGlite** | 100/100 | RLS entre usuarios, XP (validación, referencias, retos, topes de 24 h, repeticiones y anuncios, ritmo, racha, idempotencia), AAL1/AAL2, `activity_log`, `question_history`, `delete_my_account`, cascada |
+| `tests/migrations.test.js` | **PGlite** | 38/38 | Las 8 migraciones desde cero y **dos veces**; sobre una estructura equivalente a producción con datos (sin cambios en `progress`/`profiles`/`stats`); auditoría del catálogo (RLS, `search_path`, privilegios, vistas, claves ajenas, AAL2) |
+| `tests/content.test.js` | **PGlite** | 44/44 | 1.144 preguntas y 212 lecciones, idempotencia, coincidencia con la app, permisos |
+| `tests/android.test.js` | **Mock** (Capacitor y AdMob simulados) | 30/30 | Botón atrás, aviso sin conexión, banner/vídeo/frecuencia/consentimiento, sin anuncios en niveles |
+
+**Total: 1.578 comprobaciones explícitas, 12.780 preguntas generadas verificadas y 6.000 acciones aleatorias.**
 
 ## Pruebas de mutación (los tests detectan errores introducidos a propósito)
 
-Se rompieron reglas en una copia, se comprobó que el test falla y se restauró:
+Se rompe **una regla cada vez**, se comprueba que algún test falla y se restaura. **35 mutaciones, 35 detectadas.**
 
-- **Mutación sistemática de reglas SQL** (`node tools/mutation-sql.js`): 23 reglas de seguridad rotas una a una, **23 detectadas** (la primera ejecución dejó 2 sin detectar; eran huecos de los tests y se cubrieron). Detalle en `AUDITORIA_MIGRACIONES.md`.
-- Quitar el tope diario de XP y los permisos de `stats` → fallan 2 pruebas SQL.
-- Quitar el tope de 40.000 del historial y `security_invoker` de `activity_log` → fallan 3 pruebas (esta última mostró que, sin `security_invoker`, la vista filtraría datos de otros usuarios).
-- Provocar un fallo en el flujo de pruebas → `npm test` termina con error (antes devolvía siempre 0; corregido).
-- Bug real encontrado por los tests: el campo del código 2FA se borraba al repintar antes de enviarse.
+- **23 reglas de seguridad SQL** (`node tools/mutation-sql.js`): tope de 24 h con fecha del cliente, referencias libres, XP de retos, topes de anuncios y repeticiones, ritmo, importación con eventos, permisos de `stats`, guarda de la migración 04, AAL2 en `award_xp`/`delete_my_account`/políticas, `search_path`, ejecución por `anon`, privilegios de `progress`/`profiles`, `security_invoker`, tope del historial, borrado de cuentas ajenas, escritura de contenido. La primera pasada dejó 2 sin detectar (huecos de los tests, cubiertos).
+- **7 reglas del análisis estático** (sobre copias del HTML): `eval`, botón que llama a una función inexistente, traducción con 2 idiomas, función muerta, clave secreta en el cliente, CSP abierta, zoom bloqueado.
+- **5 reglas del cliente**: guardado con cuota llena, `home()` sin ruta (excepción del botón atrás), confirmación de cambio de cuenta por enlace, botón de reinicio con cuenta, cola de XP ante un tope.
+
+Los fallos encontrados por las propias pruebas: ver `AUDITORIA_SEGURIDAD.md` (C1–C14).
 
 ## Contra el servicio real (Supabase) — lo único comprobado
 
@@ -59,7 +64,9 @@ Con la clave pública, sin crear cuentas ni escribir datos:
 - Todo en Android físico (lista en `COMPILACION_ANDROID.md`).
 - Rendimiento y memoria en dispositivo.
 - Prueba de carga/conexión lenta real (solo simulada: reintentos y cola).
-- Pruebas visuales en varias resoluciones: la capa de interfaz se prueba en jsdom, que no dibuja. **Ningún test comprueba el aspecto.**
+- **Pruebas visuales**: los tests de interfaz usan jsdom, que no dibuja, así que **ningún test automático comprueba el aspecto**. En la auditoría se revisaron a mano, en un navegador real a 375×812 y en claro/oscuro, solo 6 pantallas (bienvenida, nombre, elegir ruta, mapa, pregunta y acierto). **No se vieron en pantalla**: Perfil, Especiales, retos, 2FA ni anuncios, ni otros anchos de pantalla.
+- Lector de pantalla real (TalkBack) y contraste medido en todos los estados.
+- Sondeo de memoria y arranque en un móvil modesto (solo se midió en escritorio).
 - Cambio real de dispositivo, y expiración real de sesión.
 
 ## Cómo repetirlo

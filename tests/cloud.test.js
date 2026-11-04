@@ -83,7 +83,7 @@ const setf=(e,p)=>ev(`document.querySelector("#cE").value=${JSON.stringify(e)};$
  setf("a@b.com","");ev(`bforgot()`);await sleep(100);ok("recuperar envía petición",db.rec=="a@b.com"&&/enlace para restablecer/.test(T()));
  ok("los enlaces del correo apuntan a la web publicada (no a localhost)",db.redir=="https://pablofernandezmelero-png.github.io/BITTY_FINAL/"&&db.otpRedir=="https://pablofernandezmelero-png.github.io/BITTY_FINAL/");
  setf("a@b.com","password1");ev(`cgo("i")`);await sleep(250);
- ev(`BRC=1;bwnp()`);ok("pantalla nueva contraseña",/Nueva contraseña/.test(T()));
+ ev(`bwnp()`);ok("pantalla nueva contraseña",/Nueva contraseña/.test(T()));
  ev(`document.querySelector("#cN1").value="corta";document.querySelector("#cN2").value="corta";bnpw()`);await sleep(50);ok("pass nueva corta rechazada",/al menos 8/.test(T())&&!db.newpw);
  ev(`document.querySelector("#cN1").value="nuevapass1";document.querySelector("#cN2").value="distinta22";bnpw()`);await sleep(50);ok("no coinciden rechazada",/no coinciden/.test(T())&&!db.newpw);
  ev(`document.querySelector("#cN1").value="nuevapass1";document.querySelector("#cN2").value="nuevapass1";bnpw()`);await sleep(300);ok("cambia contraseña y vuelve a la app",db.newpw=="nuevapass1"&&!w.document.querySelector("#cN1"));

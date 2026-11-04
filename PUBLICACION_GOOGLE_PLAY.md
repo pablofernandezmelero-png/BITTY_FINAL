@@ -21,6 +21,10 @@
 4. **`applicationId` definitivo.** Hoy es `com.bitty.app`; en cuanto se sube a Play no se puede cambiar. Si quieres otro (por ejemplo con un dominio tuyo), se cambia en `android/app/build.gradle`, `capacitor.config.json` y en el `namespace` **antes** de publicar.
 5. **Público objetivo.** Es una app educativa; si va dirigida a menores de 13 años (o a un público mixto con niños), Google aplica la política *Familias* y los anuncios y el tratamiento de datos tienen requisitos mucho más estrictos (incluida la selección de redes publicitarias certificadas). **Decide el público antes de configurar AdMob y la ficha.** El código actual no está preparado para un público infantil (por ejemplo, no activa el tratamiento «dirigido a niños» en AdMob).
 
+### Privacidad y fuentes (hallazgo de la auditoría)
+5b. **Google Fonts**: la web carga las fuentes Fredoka y Nunito desde `fonts.googleapis.com` / `fonts.gstatic.com`. Eso envía la IP del usuario a Google **sin consentimiento previo** (riesgo RGPD) y falla sin conexión (cae a fuentes del sistema). Solución recomendada: **autoalojar los `.woff2`** dentro de la app (paso 6 de `PLAN_FINAL_BITTY.md`; requiere descargarlos y tu permiso). Hasta entonces, **debe constar en la política de privacidad**.
+5c. **Permisos fusionados**: el manifiesto propio solo declara `INTERNET`; el plugin de anuncios añade `ACCESS_NETWORK_STATE` y el SDK de Google añade los suyos (entre ellos el ID de publicidad). **No se pudo inspeccionar el manifiesto fusionado de la APK**: revísalo (`apkanalyzer manifest print app-debug.apk`) y declara cada permiso en la ficha.
+
 ### Material de la ficha
 6. **Icono** de 512×512 y los iconos de la app (hoy son los de Capacitor por defecto) y **pantalla de inicio** de Bitty.
 7. **Gráfico de funciones** (1024×500) y capturas de pantalla del móvil (sale de la APK real).

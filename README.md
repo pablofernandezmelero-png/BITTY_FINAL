@@ -14,6 +14,11 @@ App educativa de informática (español, inglés y neerlandés). Una sola págin
 | [`PUBLICACION_GOOGLE_PLAY.md`](PUBLICACION_GOOGLE_PLAY.md) | Lista de lo que falta para publicar |
 | [`PRUEBAS_Y_VALIDACION.md`](PRUEBAS_Y_VALIDACION.md) | Qué prueba cada suite y qué no |
 | [`AUDITORIA_MIGRACIONES.md`](AUDITORIA_MIGRACIONES.md) | Veredicto de cada migración, hallazgos, orden de aplicación y riesgos residuales |
+| [`AUDITORIA_COMPLETA_BITTY.md`](AUDITORIA_COMPLETA_BITTY.md) | **Puntuación 61/100**, arquitectura y resultados por área |
+| [`INVENTARIO_FUNCIONALIDADES.md`](INVENTARIO_FUNCIONALIDADES.md) | Todas las funcionalidades, su estado y cómo se probaron |
+| [`AUDITORIA_SEGURIDAD.md`](AUDITORIA_SEGURIDAD.md) | Hallazgos de seguridad por gravedad, con evidencias y estado |
+| [`AUDITORIA_SUPABASE.md`](AUDITORIA_SUPABASE.md) | Tablas, funciones, RLS, compatibilidad y pasos pendientes |
+| [`PLAN_FINAL_BITTY.md`](PLAN_FINAL_BITTY.md) | Qué falta para llegar al 100 %, en orden y con dependencias |
 
 ## Estructura
 

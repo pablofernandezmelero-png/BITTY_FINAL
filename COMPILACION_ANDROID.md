@@ -80,7 +80,7 @@ Anota lo que falle (captura + qué pasó) y se corrige.
 
 ## Problemas conocidos o por vigilar
 
-- La posición del banner (`ADS.bannerMargin = 72`) es una estimación: solo se puede ajustar viéndolo en un móvil.
+- **Banner y barra inferior:** el banner de AdMob es una vista nativa sobre la web. Antes su margen era un 72 fijo y la barra de navegación mide ~73 px (y crece con el tamaño de letra del móvil), así que la tapaba. Ahora el margen se calcula con el alto real de la barra (`adMargin()` en `www/index.html`) + 6 px de hueco, se recalcula al girar o cambiar el tamaño de letra, y el contenido deslizable reserva el espacio del banner (`--adh`). `ADS.bannerMargin = 80` es solo el respaldo. Verificado con la barra medida en un navegador real y con pruebas; **sin ver el resultado en un móvil físico**.
 - La APK contiene la web empaquetada: un cambio en la web exige una APK nueva. La web de GitHub Pages sí se actualiza sola con cada `push`.
 - Los enlaces de los correos abren la web publicada en el navegador, no la app (no hay *deep links* configurados). Para recuperar contraseña funciona; el usuario luego inicia sesión en la app.
 - La sesión (incluido el token de renovación) se guarda en el almacenamiento local privado de la app. Un almacén cifrado por el sistema requeriría un plugin nativo adicional.

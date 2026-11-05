@@ -26,6 +26,7 @@ const dom = new JSDOM(html, {
         addListener(n, f) { (A.listeners[n] = A.listeners[n] || []).push(f); return Promise.resolve({ remove() {} }); },
         async showBanner(o) { A.calls.push("showBanner"); A.opts.banner = o; },
         async hideBanner() { A.calls.push("hideBanner"); },
+        async removeBanner() { A.calls.push("banner-removed"); },
         async prepareRewardVideoAd(o) { A.calls.push("prepare"); A.opts.rewarded = o; },
         async showRewardVideoAd() { A.calls.push("showReward"); if (A.reward) (A.listeners.onRewardedVideoAdReward || []).forEach(f => f({ type: "bytes", amount: 1 })); return { type: "bytes", amount: 1 }; }
       } } };
@@ -82,6 +83,41 @@ const back = () => cap.cb && cap.cb({ canGoBack: false });
   ev(`go(0)`); await sleep(80); ok("banner oculto dentro de un nivel", lastBan() === "hideBanner");
   ev(`fin(0)`); await sleep(80); ok("banner oculto en el resultado", lastBan() === "hideBanner");
   ev(`home()`); await sleep(80); ok("banner vuelve en el inicio", lastBan() === "showBanner");
+  // ----- el banner (vista nativa) no debe tapar la barra de navegación inferior: su margen sale del alto REAL de la barra -----
+  const showAt = async (h, inset) => {
+    ev(`window.getComputedStyle=e=>({paddingBottom:"${inset || 0}px"});document.querySelector("#nav").getBoundingClientRect=()=>({height:${h}})`);
+    ev(`go(0)`); await sleep(60); ev(`tab="r";home()`); await sleep(80);
+    return lastBan() === "showBanner" ? A.opts.banner.margin : null;
+  };
+  const m73 = await showAt(73);
+  ok("barra de 73 px: margen 79 (alto + 6 de hueco), no el 72 fijo de antes", m73 === 79);
+  const m99 = await showAt(99);
+  ok("letra grande en el móvil (barra de 99 px): el margen sube a 105 y sigue sin tapar", m99 === 105);
+  const mIn = await showAt(107, 34);
+  ok("con zona segura inferior de 34 px (ya incluida en el alto de la barra y que el plugin suma aparte): margen 79", mIn === 79);
+  let neverCovers = true;
+  for (const h of [50, 60, 73, 80, 99, 121, 160, 200]) { const m = await showAt(h); if (!(m >= h + 6)) neverCovers = false; }
+  ok("para cualquier alto de barra (50–200 px) el margen es siempre ≥ alto + 6: nunca la tapa", neverCovers);
+  const m0 = await showAt(0);
+  ok("si no se puede medir la barra, usa el respaldo seguro de 80", m0 === 80);
+  ok("se respetan las dimensiones del anuncio de AdMob: banner adaptable, abajo y centrado, sin forzar tamaño", A.opts.banner.adSize === "ADAPTIVE_BANNER" && A.opts.banner.position === "BOTTOM_CENTER" && !("width" in A.opts.banner) && !("height" in A.opts.banner));
+  await showAt(73);
+  (A.listeners.bannerAdSizeChanged || []).forEach(f => f({ width: 360, height: 60 }));
+  ok("el contenido deslizable deja sitio al banner (alto 60 + 6 de hueco)", ev(`document.documentElement.style.getPropertyValue("--adh")`) === "66px");
+  ok("la hoja de estilos reserva ese espacio al final de la zona de contenido", /main\{[^}]*padding:16px 16px calc\(16px \+ var\(--adh,0px\)\)/.test(html));
+  ev(`go(0)`); await sleep(60);
+  ok("al ocultar el banner se libera el espacio", ev(`document.documentElement.style.getPropertyValue("--adh")`) === "0px");
+  ev(`tab="r";home()`); await sleep(80);
+  (A.listeners.bannerAdSizeChanged || []).forEach(f => f({ width: 0, height: 0 }));
+  ok("un banner de alto 0 no reserva espacio", ev(`document.documentElement.style.getPropertyValue("--adh")`) === "0px");
+  // si cambia el alto de la barra con el banner puesto (girar, tamaño de letra), se recoloca
+  await showAt(73); A.calls.length = 0;
+  ev(`document.querySelector("#nav").getBoundingClientRect=()=>({height:99})`);
+  w.dispatchEvent(new w.Event("resize")); await sleep(600);
+  ok("al cambiar el alto de la barra el banner se quita y se vuelve a poner con el margen nuevo (105)", A.calls.includes("banner-removed") && lastBan() === "showBanner" && A.opts.banner.margin === 105);
+  A.calls.length = 0; w.dispatchEvent(new w.Event("resize")); await sleep(600);
+  ok("si el alto no cambia, no se toca el banner (sin parpadeos)", !A.calls.includes("banner-removed") && A.calls.length === 0);
+  ev(`delete window.getComputedStyle`); ev(`document.querySelector("#nav").getBoundingClientRect=Element.prototype.getBoundingClientRect`);
   ev(`wl()`); await sleep(80); ok("banner oculto en el login", lastBan() === "hideBanner");
   ev(`AS=0;tab="p";home()`); await sleep(80);
   ok("el perfil ofrece el bonus de vídeo", /Bonus de bytes/.test(VISTXT()) && /Ver vídeo/.test(VISTXT()));

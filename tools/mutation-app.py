@@ -50,6 +50,14 @@ M = [
  (WR, "la APK firmada usa la numeración de las de prueba", '$((1000 + GITHUB_RUN_NUMBER))', '$((GITHUB_RUN_NUMBER))', "update"),
  (WR, "el workflow firmado deja de verificar la firma", 'verify --verbose --print-certs', 'version', "update"),
  (WR, "el workflow firmado publica sin que lo pidas", "if: ${{ inputs.publish_release }}", "if: ${{ true }}", "update"),
+ (H, "el banner vuelve al margen fijo que tapaba la barra", 'position:"BOTTOM_CENTER",margin:adM,', 'position:"BOTTOM_CENTER",margin:72,', "android"),
+ (H, "el banner no deja hueco sobre la barra", 'Math.ceil(h-inset)+ADS.bannerGap', 'Math.ceil(h-inset)', "android"),
+ (H, "el margen no descuenta la zona segura (la suma dos veces)", 'Math.ceil(h-inset)', 'Math.ceil(h)', "android"),
+ (H, "el banner no se recoloca al cambiar el alto de la barra", 'Math.abs(adMargin()-adM)<2)return', 'true)return', "android"),
+ (H, "el contenido no deja sitio al banner", 's=>adSpace(adBan&&s&&s.height>0?s.height:0)', 's=>0', "android"),
+ (H, "la zona de contenido no reserva el espacio del banner", 'padding:16px 16px calc(16px + var(--adh,0px))', 'padding:16px', "android"),
+ (H, "el banner cambia el tamaño original de AdMob", 'adSize:"ADAPTIVE_BANNER"', 'adSize:"BANNER"', "android"),
+ (H, "al ocultar el banner no se libera el espacio", 'adBan=0;adSpace(0);await P.hideBanner()', 'adBan=0;await P.hideBanner()', "android"),
  (H, "falta el icono de iPhone", '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">', '', "pwa"),
 ]
 bad = 0

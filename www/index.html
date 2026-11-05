@@ -6,7 +6,7 @@
 :root[data-theme="dark"]{--bg:#140e2a;--fg:#f5f0ff;--mut:#a79bd0;--card:#221a44;--line:#3a2d6b;--okb:#0f3d2a;--badb:#4a1626;--pri:#a78bfa}
 html{background:var(--bg)}html,body{height:100%}
 body{margin:0 auto;color:var(--fg);font:600 16px/1.4 Fredoka,system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;max-width:520px;-webkit-tap-highlight-color:transparent}
-button{touch-action:manipulation}main{flex:1;overflow:hidden auto;padding:16px}button{font:inherit;color:inherit;cursor:pointer}
+button{touch-action:manipulation}main{flex:1;overflow:hidden auto;padding:16px 16px calc(16px + var(--adh,0px))}button{font:inherit;color:inherit;cursor:pointer}
 #bg{position:fixed;inset:0;z-index:-1;overflow:hidden}#bg i{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(70px);opacity:.35;animation:dr 16s ease-in-out infinite alternate}
 #bg i:nth-child(1){background:var(--pri);left:-20vmax;top:-20vmax}#bg i:nth-child(2){background:var(--pri2);right:-25vmax;top:30%;animation-delay:-5s}#bg i:nth-child(3){background:#22d3ee;left:10%;bottom:-30vmax;animation-delay:-9s}
 #cv{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
@@ -1449,9 +1449,17 @@ try{AS=SBon()&&!AU&&!MLK&&!localStorage.getItem("bitty_guest")?1:0}catch(e){AS=0
 // IDs de PRUEBA publicados por Google (https://developers.google.com/admob/android/test-ads).
 // Para producción: crea tu cuenta de AdMob, pon tus IDs reales aquí y pon test:false (ver README).
 // No se muestran anuncios durante niveles, jefes, retos ni pantallas de resultado.
-const ADS={test:true,banner:"ca-app-pub-3940256099942544/6300978111",rewarded:"ca-app-pub-3940256099942544/5224354917",max:3,gap:60000,bonus:10,bannerMargin:72};
+const ADS={test:true,banner:"ca-app-pub-3940256099942544/6300978111",rewarded:"ca-app-pub-3940256099942544/5224354917",max:3,gap:60000,bonus:10,bannerMargin:80,bannerGap:6};
 const adP=()=>{try{return window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()&&Capacitor.Plugins&&Capacitor.Plugins.AdMob||null}catch(e){return null}};
-let adReady=null,adBan=0,adBusy=0,adWant=0,adMsg="";
+let adReady=null,adBan=0,adBusy=0,adWant=0,adMsg="",adM=0,adRt=0;
+// El banner es una vista NATIVA colocada encima de la web. Su margen inferior = alto REAL de la barra de navegación (sin su zona segura,
+// que el plugin ya suma por su cuenta) + un hueco: así no la tapa con ningún tamaño de letra, idioma ni pantalla. bannerMargin es solo el respaldo.
+function adMargin(){try{const n=$("#nav");if(!n||n.style.display==="none")return ADS.bannerMargin;
+ const p=document.createElement("div");p.style.cssText="position:fixed;visibility:hidden;padding-bottom:env(safe-area-inset-bottom,0px)";document.body.appendChild(p);
+ const inset=parseFloat(getComputedStyle(p).paddingBottom)||0;p.remove();
+ const h=n.getBoundingClientRect().height;return h>0?Math.ceil(h-inset)+ADS.bannerGap:ADS.bannerMargin}catch(e){return ADS.bannerMargin}}
+// Espacio que ocupa el banner (alto que informa AdMob + hueco), para que el contenido deslizable no quede tapado por él.
+function adSpace(h){document.documentElement.style.setProperty("--adh",(h>0?Math.ceil(h)+ADS.bannerGap:0)+"px")}
 const adSt=()=>{let o={};try{o=JSON.parse(localStorage.getItem("bitty_ads")||"{}")}catch(e){}const d=dstr(new Date());return o&&o.d==d?{d,n:+o.n||0,t:+o.t||0}:{d,n:0,t:0}};
 const adSave=o=>{try{localStorage.setItem("bitty_ads",JSON.stringify(o))}catch(e){}};
 const adInLevel=()=>!!document.querySelector('[onclick="xq()"]')||!!document.querySelector(".fin");
@@ -1461,10 +1469,13 @@ function adStart(){const P=adP();if(!P)return Promise.resolve(false);
   try{const i=await P.requestConsentInfo();if(i&&i.isConsentFormAvailable&&i.status=="REQUIRED")await P.showConsentForm()}catch(e){}
   await P.initialize({initializeForTesting:!!ADS.test});
   try{P.addListener("onRewardedVideoAdReward",()=>{if(adWant){adWant=0;adGrant()}})}catch(e){}
+  try{P.addListener("bannerAdSizeChanged",s=>adSpace(adBan&&s&&s.height>0?s.height:0))}catch(e){}
   return true}catch(e){adReady=null;return false}})())}
 async function adBanner(on){const P=adP();if(!P)return;
- try{if(on&&!adBan&&!adInLevel()){if(!await adStart())return;adBan=1;await P.showBanner({adId:ADS.banner,adSize:"ADAPTIVE_BANNER",position:"BOTTOM_CENTER",margin:ADS.bannerMargin,isTesting:!!ADS.test})}
-  else if(!on&&adBan){adBan=0;await P.hideBanner()}}catch(e){adBan=0}}
+ try{if(on&&!adBan&&!adInLevel()){if(!await adStart())return;adBan=1;adM=adMargin();await P.showBanner({adId:ADS.banner,adSize:"ADAPTIVE_BANNER",position:"BOTTOM_CENTER",margin:adM,isTesting:!!ADS.test})}
+  else if(!on&&adBan){adBan=0;adSpace(0);await P.hideBanner()}}catch(e){adBan=0}}
+// Si cambia el alto de la barra (girar la pantalla, tamaño de letra, idioma), se recoloca el banner con el margen nuevo.
+addEventListener("resize",()=>{clearTimeout(adRt);adRt=setTimeout(async()=>{const P=adP();if(!P||!adBan||Math.abs(adMargin()-adM)<2)return;adBan=0;try{await P.removeBanner()}catch(e){}adBanner(true)},400)});
 {const n0=navr;navr=on=>{n0(on);setTimeout(()=>adBanner(!!on),0)}}   // tras repintar, para saber si hay un nivel/resultado en pantalla
 function adGrant(){const st=adSt();if(st.n>=ADS.max)return;st.n++;st.t=Date.now();adSave(st);
  const day=dstr(new Date());S.xp+=ADS.bonus;xevPush({kind:"ad",ref:"ad:"+day+":"+st.n,xp:ADS.bonus,day});save();

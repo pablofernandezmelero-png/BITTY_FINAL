@@ -96,7 +96,7 @@ En ninguna fila hay prueba en **Android físico** ni contra **Supabase autentica
 | Funcionalidad | Estado | Prueba | Notas |
 |---|---|---|---|
 | SDK + consentimiento RGPD (UMP) | Implementada | Mock | IDs de **prueba** de Google |
-| Banner solo en el inicio | Implementada | Mock | Posición (`bannerMargin`) sin verificar visualmente |
+| Banner solo en el inicio | Implementada; margen calculado con el alto real de la barra inferior (ya no tapa la navegación) | Mock + medición en navegador real | Sin ver en un móvil físico |
 | Vídeo recompensado (+10 bytes, 3/día) | Implementada | Mock, SQL | Validado por el servidor (tope 3/24 h) |
 | Sin anuncios en niveles, jefes, retos ni resultados | Implementada | Mock | |
 | IDs reales / producción | **Pendiente** | — | Requiere cuenta de AdMob |

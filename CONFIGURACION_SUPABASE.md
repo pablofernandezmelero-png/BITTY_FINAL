@@ -41,9 +41,10 @@ select user_id, xp, base_xp, streak from public.stats;
 ## 3. Ajustes del panel (no se pueden hacer desde el código)
 
 1. **Authentication → URL Configuration**
-   - *Site URL*: `https://pablofernandezmelero-png.github.io/BITTY_FINAL/`
-   - *Redirect URLs*: la misma dirección. (El cliente ya usa exactamente esa dirección para los correos, también desde la APK.)
-   - Sin esto los enlaces de confirmación, recuperación y enlace mágico apuntan a `localhost`.
+   - *Site URL*: `https://pablofernandezmelero-png.github.io/BITTY_FINAL` (**sin barra final**; es la dirección base, **no** la ruta de confirmación).
+   - *Redirect URLs*: `https://pablofernandezmelero-png.github.io/BITTY_FINAL/**`. No hace falta añadir `com.bitty.app://` ni `bitty://`: los esquemas propios solo los abre el botón de la página de confirmación.
+   - Sin esto, los enlaces de recuperación y de enlace mágico apuntan a `localhost`.
+1b. **Authentication → Email Templates → Confirm signup**: cambia el enlace para que apunte a la página pública de confirmación (texto exacto y motivos en [`PAGINA_CONFIRMACION.md`](PAGINA_CONFIRMACION.md)): `{{ .SiteURL }}/auth/confirm/?token_hash={{ .TokenHash }}&type=email`. Las demás plantillas se dejan como están.
 2. **Authentication → Sign In / Providers → Multi-Factor**: activar **TOTP** (Enroll + Verify). Sin esto, «Activar 2FA» devolverá un error.
 3. **Authentication → Sign In / Providers → Email**: decide si exiges confirmar el correo (hoy sí) y la longitud mínima de contraseña (la app exige 8).
 4. **Opcional pero recomendable**: *Project Settings → Authentication → SMTP* con un proveedor propio. El correo por defecto de Supabase tiene un límite bajo de envíos por hora y no es fiable para producción.

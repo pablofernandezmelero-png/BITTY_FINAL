@@ -24,6 +24,12 @@ En ninguna fila hay prueba en **Android físico** ni contra **Supabase autentica
 | 2FA: activar (QR y clave manual) | Implementada | Mock | No | TOTP RFC 6238 real contra un GoTrue simulado |
 | 2FA: código al iniciar sesión (AAL2) | Implementada | Mock, SQL | No | La sesión no se guarda hasta pasar a AAL2 |
 | 2FA: varios dispositivos, quitar factor | Implementada | Mock | No | Sin códigos de recuperación (Supabase no los ofrece) |
+| **Página pública de confirmación de correo** (`/auth/confirm/`) | Implementada | Mock (57), navegador real (error real contra Supabase) | No | Estados: verificando, confirmado, caducado/ya usado, no válido, error. No guarda sesión. **Camino de éxito sin probar con correo real** |
+| Reenviar el correo de confirmación (página y pantalla de acceso) | Implementada | Mock | No | Sin enumeración de cuentas, espera de 60 s |
+| Aviso de «correo no confirmado» al iniciar sesión | Implementada | Mock | No | |
+| Cambiar contraseña desde el Perfil | Implementada | Mock | No | Con «Cancelar» y botón atrás |
+| Cierre de sesión solo de este dispositivo (`scope=local`) | Implementada | Mock | Parcial | |
+| Enlaces profundos `com.bitty.app://confirmed` (Android) y `bitty://confirmed` (escritorio) | Implementada | Mock | Sí | Solo avisan; sin tokens. App Links https no posibles en `github.io` |
 | Perfil de usuario (nombre) | Implementada | Local, Mock | Sí | El nombre se sanea al cargar (sin `<` ni `>`) |
 
 ## 2. Juego y contenido
@@ -73,6 +79,16 @@ En ninguna fila hay prueba en **Android físico** ni contra **Supabase autentica
 | Sin copias de seguridad / sin tráfico en claro | Implementada | Revisión del manifiesto | |
 | Enlaces de correo desde la APK | Implementada (corregida) | Mock | Usan la web publicada |
 | Iconos y pantalla de inicio propios | **Pendiente** | — | Son los de Capacitor |
+
+## 4b. Escritorio (Windows, Electron)
+
+| Funcionalidad | Estado | Prueba | Notas |
+|---|---|---|---|
+| App de escritorio con la web actual (`desktop/`) | Implementada | **Electron 45 real** (10/10), también empaquetada | Protocolo propio `app://bitty`, sin Node en la página |
+| Endurecimiento (aislamiento, sandbox, navegación, permisos) | Implementada | Electron real + 100 pruebas + 20 mutaciones | |
+| Instalador NSIS `Bitty-Setup-1.0.0.exe` | Generado (116 MB, sin firmar) | Compilación local | **Instalación sin probar**; icono por defecto |
+| Funciona sin conexión | Implementada | Sin probar con la red desconectada | La web es local |
+| Firma de código, icono propio, autoactualización | **Pendiente** | — | |
 
 ## 5. Publicidad (solo en Android)
 

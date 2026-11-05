@@ -11,33 +11,44 @@ Se ejecutan todas con `npm test` (y las ejecutan automáticamente los workflows 
 | **Servicio real (Supabase)** | Comportamiento real de la plataforma | — |
 | **Android físico** | La app en un móvil | — |
 
-## Suites (resultado del 2026-11-04 con los cambios locales de la auditoría; `npm test` termina con código 0)
+## Suites (resultado del 2026-11-05; `npm test` termina con código 0)
 
 | Archivo | Nivel | Resultado | Qué cubre |
 |---|---|---|---|
-| `tests/static.test.js` | Análisis estático (parser acorn) | 12/12 | Sin `eval`/`document.write`, 276 traducciones con los 3 idiomas, 0 código muerto, 33 manejadores de la interfaz definidos (sin botones rotos), CSP restrictiva, solo clave pública en el cliente, accesibilidad básica |
+| `tests/static.test.js` | Análisis estático (parser acorn) | 12/12 | Sin `eval`/`document.write`, 276 traducciones con los 3 idiomas, 0 código muerto, manejadores de la interfaz definidos (sin botones rotos), CSP restrictiva, solo clave pública en el cliente, accesibilidad básica |
 | `tests/questions.test.js` | Local (jsdom) | 12.780 preguntas generadas, 0 errores | Todas las rutas × 3 dificultades × 3 idiomas: sin vacías, sin `NaN`/`undefined`, sin opciones repetidas |
-| `tests/bank.test.js` | Local | 1.213/1.213 | 0 duplicados ni casi duplicados, 3 idiomas, **18 respuestas verificadas ejecutando el código** (Python y Node), anti-repetición por antigüedad |
+| `tests/bank.test.js` | Local | 1.213/1.213 | 0 duplicados ni casi duplicados, 3 idiomas, **18 respuestas verificadas ejecutando el código**, anti-repetición por antigüedad |
 | `tests/flow.test.js` | Local (jsdom) | 42 pasos | Jugar niveles y jefes ganando en 3 idiomas × 3 dificultades × 4 rutas |
-| `tests/cloud.test.js` | **Mock** | 57/57 | Registro, login, logout, recuperación, enlace mágico, invitado, fusión, cola de XP, 2FA completo (TOTP RFC 6238 real), recorte del historial, redirección de correos, eliminar cuenta, rechazos por tope |
-| `tests/robustness.test.js` | **Mock** | 32/32 | Estado corrupto o de versión antigua, almacenamiento ausente o lleno, contenido hostil, sesión caducada, servidor 500 y sin red, **reinicio con eventos pendientes**, enlace con token de otra cuenta, botón de reinicio con y sin cuenta, nodos del mapa accesibles |
-| `tests/monkey.test.js` | Local (jsdom) | 10/10 · **6.000 acciones aleatorias** | 5 semillas fijas, pulsando controles visibles y escribiendo texto, sin red: sin excepciones ni estados absurdos. Encontró un fallo real |
+| `tests/cloud.test.js` | **Mock** | 70/70 | Registro (con redirección a `/auth/confirm/`), login, cuenta sin confirmar y reenvío, logout local, recuperación, enlace mágico, invitado, fusión, cola de XP, 2FA completo (TOTP RFC 6238 real), **cambiar contraseña desde el Perfil**, recorte del historial, eliminar cuenta, rechazos por tope |
+| `tests/confirm.test.js` | **Mock** (respuestas de Supabase simuladas con las reales observadas) | 57/57 | **Página `/auth/confirm/`**: cada estado, token borrado de la URL, sesión devuelta revocada y nunca guardada, reenvío sin enumeración y con espera, tipos y parámetros hostiles, Android/PC, 3 idiomas, CSP, sin recursos externos |
+| `tests/robustness.test.js` | **Mock** | 41/41 | Estado corrupto o antiguo, almacenamiento ausente o lleno, contenido hostil, sesión caducada, servidor 500 y sin red, reinicio con eventos pendientes, enlace con token de otra cuenta, reinicio de progreso, nodos del mapa accesibles, **`bitty://confirmed` por el puente del escritorio** |
+| `tests/monkey.test.js` | Local (jsdom) | 10/10 · **6.000 acciones aleatorias** | 5 semillas fijas, controles visibles y texto, sin red: sin excepciones ni estados absurdos |
 | `tests/sql.test.js` | **PGlite** | 100/100 | RLS entre usuarios, XP (validación, referencias, retos, topes de 24 h, repeticiones y anuncios, ritmo, racha, idempotencia), AAL1/AAL2, `activity_log`, `question_history`, `delete_my_account`, cascada |
-| `tests/migrations.test.js` | **PGlite** | 38/38 | Las 8 migraciones desde cero y **dos veces**; sobre una estructura equivalente a producción con datos (sin cambios en `progress`/`profiles`/`stats`); auditoría del catálogo (RLS, `search_path`, privilegios, vistas, claves ajenas, AAL2) |
+| `tests/migrations.test.js` | **PGlite** | 38/38 | Las 8 migraciones desde cero y **dos veces**; sobre una estructura equivalente a producción con datos; auditoría del catálogo (RLS, `search_path`, privilegios, vistas, claves ajenas, AAL2) |
 | `tests/content.test.js` | **PGlite** | 44/44 | 1.144 preguntas y 212 lecciones, idempotencia, coincidencia con la app, permisos |
-| `tests/android.test.js` | **Mock** (Capacitor y AdMob simulados) | 30/30 | Botón atrás, aviso sin conexión, banner/vídeo/frecuencia/consentimiento, sin anuncios en niveles |
+| `tests/android.test.js` | **Mock** (Capacitor y AdMob simulados) | 45/45 | Botón atrás, aviso sin conexión, anuncios, **enlace profundo `com.bitty.app://confirmed`** (y 7 enlaces hostiles ignorados), **manifiesto** (un único filtro `BROWSABLE`, sin App Links ni `autoVerify`) |
+| `tests/desktop.test.js` | Local (Node, sin Electron) | 100/100 | Rutas hostiles contra `app://bitty`, navegación y enlaces externos, enlace profundo `bitty://confirmed`, configuración endurecida de `main.js`/`preload.js`/`package.json` |
+| `desktop/scripts/smoke.js` | **Binario real (Electron 45.2.3)** | 10/10 | Arranca la app de escritorio (y la **empaquetada**) con ventana oculta: sin `require`/`process`, API mínima, `localStorage`, modo invitado, navegación externa bloqueada, intentos de salirse de `www` rechazados. **No forma parte de `npm test`** (necesita Electron); lo ejecuta el workflow de Windows |
 
-**Total: 1.578 comprobaciones explícitas, 12.780 preguntas generadas verificadas y 6.000 acciones aleatorias.**
+**Total en `npm test`: 1.772 comprobaciones explícitas** (sin contar las 12.780 preguntas generadas ni las 6.000 acciones aleatorias).
 
 ## Pruebas de mutación (los tests detectan errores introducidos a propósito)
 
-Se rompe **una regla cada vez**, se comprueba que algún test falla y se restaura. **35 mutaciones, 35 detectadas.**
+Se rompe **una regla cada vez**, se comprueba que algún test falla y se restaura el archivo. **79 mutaciones, 79 detectadas** (varias sobrevivieron la primera vez: eran huecos de las pruebas y se cubrieron).
 
-- **23 reglas de seguridad SQL** (`node tools/mutation-sql.js`): tope de 24 h con fecha del cliente, referencias libres, XP de retos, topes de anuncios y repeticiones, ritmo, importación con eventos, permisos de `stats`, guarda de la migración 04, AAL2 en `award_xp`/`delete_my_account`/políticas, `search_path`, ejecución por `anon`, privilegios de `progress`/`profiles`, `security_invoker`, tope del historial, borrado de cuentas ajenas, escritura de contenido. La primera pasada dejó 2 sin detectar (huecos de los tests, cubiertos).
-- **7 reglas del análisis estático** (sobre copias del HTML): `eval`, botón que llama a una función inexistente, traducción con 2 idiomas, función muerta, clave secreta en el cliente, CSP abierta, zoom bloqueado.
-- **5 reglas del cliente**: guardado con cuota llena, `home()` sin ruta (excepción del botón atrás), confirmación de cambio de cuenta por enlace, botón de reinicio con cuenta, cola de XP ante un tope.
+| Herramienta | Reglas rotas | Resultado |
+|---|---|---|
+| `tools/mutation-sql.js` | 23 de seguridad SQL (topes, referencias, AAL2, `search_path`, privilegios, `security_invoker`, borrado de cuentas…) | 23/23 |
+| `tools/mutation-confirm.py` | 13 de la página de confirmación (token en la URL, sesión guardada o no revocada, tipo `recovery`, enumeración, sin espera, `innerHTML`, recurso externo, cookies, CSP, éxito falso…) | 13/13 |
+| `tools/mutation-app.py` | 11 de la app (registro sin redirección, logout global, reenvío sin espera o que distingue cuentas, enlace profundo con parámetros/otro host/otro esquema, atrás en contraseña, cancelar, manifiesto con App Link o host abierto) | 11/11 |
+| `tools/mutation-desktop.py` | 20 de Electron (salida de `www`, web externa, `http`, enlace profundo, URL parecida, credenciales, aislamiento, Node, sandbox, `webview`, navegación, permisos, DevTools, registro de protocolo, menú, preload, Electron 39, protocolo del instalador) | 20/20 |
+| Manual / `static.test.js` | 7 del análisis estático + 5 del cliente (cuota llena, `home()` sin ruta, confirmación de cambio de cuenta, reinicio con cuenta, cola ante un tope) | 12/12 |
 
-Los fallos encontrados por las propias pruebas: ver `AUDITORIA_SEGURIDAD.md` (C1–C14).
+### Defectos de las propias pruebas encontrados por las mutaciones
+
+- **Aserciones vacías (importante):** `T()` leía `document.body.textContent`, y el `<body>` incluye el código del `<script>`, que contiene **todos los textos de la interfaz**. Cualquier comprobación «aparece este texto» pasaba siempre. Además jsdom arranca la app en inglés mientras los tests esperaban español. **Corregido:** `T()` lee solo el texto visible (app, aviso y banner sin conexión) y el idioma del navegador simulado es español. Al corregirlo salieron a la luz y se arreglaron 2 fallos reales (el reenvío no distinguía un 5xx cuando el servidor manda un mensaje, y un escenario sin modo invitado).
+- **Argumentos invertidos:** en `android.test.js` `ok(nombre, condición)` va al revés que en el resto; 3 comprobaciones del manifiesto pasaban siempre. Corregido.
+- **Casos que faltaban:** error 4xx en el reenvío, botón «Cancelar» probado con un clic real y no llamando a la función.
 
 ## Contra el servicio real (Supabase) — lo único comprobado
 

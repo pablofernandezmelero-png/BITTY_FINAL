@@ -19,6 +19,9 @@ App educativa de informática (español, inglés y neerlandés). Una sola págin
 | [`AUDITORIA_SEGURIDAD.md`](AUDITORIA_SEGURIDAD.md) | Hallazgos de seguridad por gravedad, con evidencias y estado |
 | [`AUDITORIA_SUPABASE.md`](AUDITORIA_SUPABASE.md) | Tablas, funciones, RLS, compatibilidad y pasos pendientes |
 | [`PLAN_FINAL_BITTY.md`](PLAN_FINAL_BITTY.md) | Qué falta para llegar al 100 %, en orden y con dependencias |
+| [`CHECKLIST_LANZAMIENTO.md`](CHECKLIST_LANZAMIENTO.md) | **Checklist final**: estado de cada fase del plan maestro y acciones que necesito de ti |
+| [`PAGINA_CONFIRMACION.md`](PAGINA_CONFIRMACION.md) | Página pública `/auth/confirm/`, plantilla del correo, URLs de Supabase, alojamiento y dominio |
+| [`COMPILACION_ESCRITORIO.md`](COMPILACION_ESCRITORIO.md) | App de Windows (Electron): seguridad, compilación e instalador |
 
 ## Estructura
 
@@ -28,9 +31,11 @@ App educativa de informática (español, inglés y neerlandés). Una sola págin
 | `content/questions-extra.js` | Preguntas ampliadas (fuente). `node tools/build-questions.js` las inserta en el HTML. |
 | `tools/` | `build-questions.js` (inserta preguntas) y `export-content.js` (genera la migración 006). |
 | `android/` | Proyecto Android generado por Capacitor. |
+| `desktop/` | App de escritorio de Windows (Electron 45, endurecida) que empaqueta `www/`. |
+| `www/auth/confirm/` | Página pública de confirmación de correo. |
 | `supabase/migrations/` | Migraciones SQL versionadas (001–008). |
 | `tests/` | Pruebas automáticas (`npm test`). |
-| `.github/workflows/` | `android.yml` (APK de depuración), `android-release.yml` (firmado, manual), `pages.yml` (web). |
+| `.github/workflows/` | `android.yml` (APK de depuración), `android-release.yml` (firmado, manual), `desktop-windows.yml` (instalador de Windows, manual), `pages.yml` (web). |
 
 ## Pruebas
 

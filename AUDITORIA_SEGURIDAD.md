@@ -50,6 +50,20 @@ Gravedades: CRÍTICO · ALTO · MEDIO · BAJO · INFORMATIVO.
 | C13 | MEDIO | Bug de cliente: el campo del código 2FA se vaciaba antes de enviarse | Pruebas del 2FA (sesión anterior) | `cloud.test.js` | Código leído antes de repintar |
 | C14 | INFO | Vista `activity_log` filtraba datos de otros usuarios sin `security_invoker` | Mutación (sesión anterior) | `sql.test.js` | `security_invoker = true` |
 
+## B2. Detectados y corregidos en la fase del plan maestro (2026-11-05)
+
+| # | Gravedad | Hallazgo | Cómo se descubrió | Corrección y prueba |
+|---|---|---|---|---|
+| C15 | **ALTO** | **Electron 39.x**: avisos de seguridad de gravedad alta (herencia de restricciones de *sandbox* en ventanas emergentes, lecturas entre orígenes en manejadores de protocolo, permisos atribuidos al origen equivocado, `extract-zip`) | `npm audit` sobre el proyecto de escritorio | Subida a **Electron 45.2.3** (0 altas) y comprobación con Electron real. Exposición real baja en Bitty (sin popups ni `webview`, protocolo propio) |
+| C16 | MEDIO | El enlace de confirmación del plan (`token={{ .Token }}`) es el código de 6 cifras: no se puede verificar sin el correo y obligaría a pedirlo o a usar la API antigua | Revisión del plan frente a la documentación de Supabase | Flujo oficial con `token_hash` (`PAGINA_CONFIRMACION.md`) |
+| C17 | MEDIO | Aserciones **vacías** en las propias pruebas: leían `body.textContent`, que incluye el código del script con todos los textos de la interfaz, y pasaban siempre | Una mutación sobrevivió | `T()` lee solo el texto visible; idioma español fijado; 2 fallos reales salieron a la luz y se corrigieron |
+| C18 | BAJO | `sbf` perdía el estado HTTP del error: el reenvío no distinguía un 5xx de un 4xx cuando el servidor manda mensaje | Prueba del reenvío con texto visible real | El error conserva `status`; 4xx → respuesta genérica (sin enumeración), 5xx/red → «No se pudo enviar» |
+| C19 | BAJO | El cierre de sesión era **global** (revoca todos los dispositivos) | Revisión de `/auth/v1/logout` | `?scope=local` |
+
+Nuevas protecciones verificadas: la página de confirmación **no guarda ni deja viva ninguna sesión**, no filtra el token (se borra de la URL, `no-referrer`, sin recursos externos), valida parámetros con lista blanca y no puede ser usada para redirigir a otro sitio.
+
+**CSRF y orígenes (revisión del plan):** la API se usa con `Authorization: Bearer` (no cookies), así que CSRF no aplica; Supabase responde `Access-Control-Allow-Origin: *` por diseño (comprobado con una petición real), de modo que la protección es el token y RLS, no el origen.
+
 ## C. Comprobado y sin hallazgos
 
 | Revisión | Resultado |

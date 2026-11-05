@@ -2,6 +2,8 @@
 
 Fecha: 2026-11-04. Auditoría integral sobre el estado real del repositorio (rama `main`, commit `bf353a3` + cambios locales de esta auditoría, sin subir). Documentos complementarios: [`INVENTARIO_FUNCIONALIDADES.md`](INVENTARIO_FUNCIONALIDADES.md), [`AUDITORIA_SEGURIDAD.md`](AUDITORIA_SEGURIDAD.md), [`AUDITORIA_SUPABASE.md`](AUDITORIA_SUPABASE.md), [`AUDITORIA_MIGRACIONES.md`](AUDITORIA_MIGRACIONES.md), [`PLAN_FINAL_BITTY.md`](PLAN_FINAL_BITTY.md), [`PRUEBAS_Y_VALIDACION.md`](PRUEBAS_Y_VALIDACION.md), [`PUBLICACION_GOOGLE_PLAY.md`](PUBLICACION_GOOGLE_PLAY.md).
 
+> **Actualización 2026-11-05 (plan maestro, `CHECKLIST_LANZAMIENTO.md`):** se añadieron la página pública de confirmación de correo, el reenvío, el cambio de contraseña desde el Perfil, el enlace profundo y la **app de escritorio** (Electron 45), con 79 mutaciones detectadas y la corrección de aserciones vacías en las propias pruebas. **La puntuación no se recalcula**: lo nuevo está comprobado en local, con simulaciones y con un Electron real, pero **no con servicios reales ni en un móvil**, que es lo que limita la nota. Subirá cuando se completen los pasos de `PLAN_FINAL_BITTY.md` (migraciones, configuración de Supabase y pruebas con cuenta y móvil reales).
+
 ## Veredicto
 
 **Puntuación global: 61 sobre 100** (60,65 exacto).

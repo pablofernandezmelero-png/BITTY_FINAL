@@ -72,6 +72,8 @@ Instala `app-debug.apk` (si Android se queja, desinstala la anterior; el progres
 8. Cerrar la app del todo y abrirla: sigue la sesión y el progreso.
 9. Girar la pantalla, abrir el teclado en los formularios, cambiar el idioma.
 10. Cerrar la app a mitad de un nivel y reabrir.
+11. **Confirmación de correo** (requiere la configuración de `PAGINA_CONFIRMACION.md`): crear una cuenta, abrir el enlace del correo en el móvil y pulsar «Volver a Bitty»: debe abrir la app y mostrar «¡Correo confirmado!» (`com.bitty.app://confirmed`). Con la app desinstalada debe llevar a la web.
+12. **Cambiar contraseña** desde Perfil y comprobar que el botón «atrás» vuelve al perfil.
 
 Anota lo que falle (captura + qué pasó) y se corrige.
 

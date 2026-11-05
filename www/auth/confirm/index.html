@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#6d4aff">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src https://tewlouwqlpjmrifvhrhz.supabase.co; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>Bitty · Confirmación de correo</title>
+<style>
+:root{--bg:#f4f3ff;--fg:#241b5c;--mut:#665f92;--card:#fff;--line:#e3e0f5;--pri:#6d4aff;--pri2:#ff4d8d;--ok:#58cc02;--okd:#3d8c00;--bad:#c02d2d;--warn:#b45309}
+@media(prefers-color-scheme:dark){:root{--bg:#140e2a;--fg:#f5f0ff;--mut:#a79bd0;--card:#221a44;--line:#3a2d6b;--okd:#86efac;--bad:#fca5a5;--warn:#fcd34d}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--fg);font:600 17px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:max(20px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom));
+background-image:radial-gradient(60vmax 60vmax at -10% -10%,rgba(109,74,255,.22),transparent 60%),radial-gradient(55vmax 55vmax at 110% 30%,rgba(255,77,141,.18),transparent 60%)}
+main{width:100%;max-width:440px}
+.brand{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 18px;font-weight:800;font-size:26px;letter-spacing:.2px;background:linear-gradient(135deg,var(--pri),var(--pri2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand svg{width:44px;height:44px;flex:none}
+.card{background:var(--card);border:2px solid var(--line);border-bottom-width:5px;border-radius:26px;padding:28px 22px;text-align:center;box-shadow:0 18px 40px -22px rgba(36,27,92,.45)}
+.ico{height:84px;display:flex;align-items:center;justify-content:center;font-size:62px;line-height:1}
+.spin{width:58px;height:58px;border-radius:50%;border:6px solid var(--line);border-top-color:var(--pri);animation:sp 0.9s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+h1{margin:6px 0 8px;font-size:25px;line-height:1.2;outline:0}
+p{margin:0 0 18px;color:var(--mut)}
+.ok h1{color:var(--okd)}.bad h1{color:var(--bad)}.warn h1{color:var(--warn)}
+.btn,.lnk{display:block;width:100%;font:inherit;font-weight:800;text-decoration:none;cursor:pointer}
+.btn{border:0;border-radius:18px;padding:15px 18px;font-size:18px;color:#fff;background:linear-gradient(135deg,#6d4aff,#ff4d8d);box-shadow:0 5px 0 rgba(0,0,0,.25);margin-top:12px;text-align:center}
+.btn.g{background:#58cc02;box-shadow:0 5px 0 #3d8c00}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.lnk{background:none;border:0;color:var(--mut);text-decoration:underline;padding:12px 6px;margin-top:6px;font-size:15px}
+.inp{width:100%;font:inherit;font-weight:700;font-size:17px;text-align:center;padding:13px;border:2px solid var(--line);border-bottom-width:4px;border-radius:16px;background:var(--card);color:var(--fg);margin-top:6px}
+.sm{font-size:14px;color:var(--mut);margin:10px 0 0}
+.sr{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+button:focus-visible,a:focus-visible,.inp:focus-visible{outline:3px solid var(--pri2);outline-offset:2px}
+form{margin-top:6px}
+.foot{margin-top:16px;text-align:center;font-size:13px;color:var(--mut)}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="14" width="48" height="40" rx="16" fill="#6d4aff"/><rect x="14" y="22" width="36" height="24" rx="10" fill="#1d1450"/><circle cx="25" cy="32" r="5" fill="#5ff3d8"/><circle cx="39" cy="32" r="5" fill="#5ff3d8"/><path d="M25 40q7 6 14 0" stroke="#ff7ab0" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="29" y="6" width="6" height="9" rx="3" fill="#ffc800"/></svg>
+    <span>Bitty</span>
+  </div>
+  <section class="card" id="card" aria-labelledby="t">
+    <div class="ico" id="ico" aria-hidden="true"></div>
+    <h1 id="t" tabindex="-1"></h1>
+    <p id="m"></p>
+    <div id="act"></div>
+  </section>
+  <p class="foot" id="foot"></p>
+  <div class="sr" role="status" aria-live="polite" id="live"></div>
+</main>
+<noscript><p style="text-align:center;padding:20px">Bitty necesita JavaScript para confirmar tu correo. / Bitty needs JavaScript to confirm your email.</p></noscript>
+<script>
+(function(){"use strict";
+// Clave PÚBLICA de Supabase (la misma que usa la app); la seguridad real la da el servidor. Nunca pongas aquí una clave secreta.
+var SB={url:"https://tewlouwqlpjmrifvhrhz.supabase.co",key:"sb_publishable_0f_eCgg-okEEC2aX3BaxvQ_LAL4H3W7"};
+var WEB="https://pablofernandezmelero-png.github.io/BITTY_FINAL/";
+var WEB_CONFIRM=WEB+"auth/confirm/";
+var APP_ANDROID="com.bitty.app://confirmed", APP_DESKTOP="bitty://confirmed";
+var TYPES={email:1,signup:1,email_change:1};
+var d=document;
+
+// ---------- idioma (es por defecto; en y nl); solo valores de una lista blanca ----------
+var qs=new URLSearchParams(location.search);
+var L=(function(){var q=(qs.get("lang")||navigator.language||"es").slice(0,2).toLowerCase();return q==="en"||q==="nl"?q:"es"})();
+d.documentElement.lang=L;
+var T={
+es:{title:"Bitty · Confirmación de correo",foot:"Si no has creado una cuenta en Bitty, puedes ignorar este mensaje.",
+ vt:"Verificando tu correo…",vm:"Un momento, estamos comprobando el enlace.",
+ ot:"¡Correo confirmado!",om:"Tu cuenta está verificada. Ya puedes iniciar sesión.",back:"Volver a Bitty",desk:"Abrir la app de escritorio",
+ et:"Este enlace ya no es válido",em:"Ha caducado o ya se ha usado. Si ya confirmaste tu correo, abre Bitty e inicia sesión. Si no, pide un enlace nuevo.",
+ it:"Enlace no válido",im:"El enlace que has abierto no es válido. Comprueba que has copiado la dirección completa del correo.",
+ st:"No hemos podido verificar el correo",sm:"Ha ocurrido un error al verificar. Inténtalo de nuevo en unos minutos.",retry:"Reintentar",
+ rl:"Tu correo",rb:"Enviarme un enlace nuevo",rok:"Si existe una cuenta pendiente de confirmar con ese correo, te hemos enviado un enlace nuevo.",
+ rwait:"Espera un poco antes de pedir otro enlace.",rbad:"Escribe un correo válido.",rnet:"No se pudo enviar. Inténtalo más tarde.",sending:"Enviando…"},
+en:{title:"Bitty · Email confirmation",foot:"If you didn't create a Bitty account, you can ignore this message.",
+ vt:"Verifying your email…",vm:"One moment, we're checking the link.",
+ ot:"Email confirmed!",om:"Your account is verified. You can now sign in.",back:"Back to Bitty",desk:"Open the desktop app",
+ et:"This link is no longer valid",em:"It has expired or was already used. If you already confirmed your email, open Bitty and sign in. If not, request a new link.",
+ it:"Invalid link",im:"The link you opened is not valid. Make sure you copied the full address from the email.",
+ st:"We couldn't verify your email",sm:"An error occurred while verifying. Please try again in a few minutes.",retry:"Try again",
+ rl:"Your email",rb:"Send me a new link",rok:"If there is an account waiting for confirmation with that email, we've sent a new link.",
+ rwait:"Please wait a little before asking for another link.",rbad:"Enter a valid email.",rnet:"It couldn't be sent. Please try later.",sending:"Sending…"},
+nl:{title:"Bitty · E-mailbevestiging",foot:"Als je geen Bitty-account hebt gemaakt, kun je dit bericht negeren.",
+ vt:"Je e-mail wordt geverifieerd…",vm:"Een ogenblik, we controleren de link.",
+ ot:"E-mail bevestigd!",om:"Je account is geverifieerd. Je kunt nu inloggen.",back:"Terug naar Bitty",desk:"De desktop-app openen",
+ et:"Deze link is niet meer geldig",em:"Hij is verlopen of al gebruikt. Als je je e-mail al hebt bevestigd, open Bitty en log in. Zo niet, vraag dan een nieuwe link aan.",
+ it:"Ongeldige link",im:"De link die je hebt geopend is niet geldig. Controleer of je het volledige adres uit de e-mail hebt gekopieerd.",
+ st:"We konden je e-mail niet verifiëren",sm:"Er is een fout opgetreden bij het verifiëren. Probeer het over een paar minuten opnieuw.",retry:"Opnieuw proberen",
+ rl:"Jouw e-mail",rb:"Stuur me een nieuwe link",rok:"Als er een account is dat nog bevestigd moet worden met dat e-mailadres, hebben we een nieuwe link gestuurd.",
+ rwait:"Wacht even voordat je een nieuwe link aanvraagt.",rbad:"Vul een geldig e-mailadres in.",rnet:"Verzenden is niet gelukt. Probeer het later opnieuw.",sending:"Verzenden…"}
+}[L];
+d.title=T.title;
+
+// ---------- utilidades ----------
+function el(tag,cls,text){var e=d.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function nav(u){(window.__nav||function(x){location.href=x})(u)}   // único punto de navegación (las pruebas lo sustituyen)
+var $card=d.getElementById("card"),$ico=d.getElementById("ico"),$t=d.getElementById("t"),$m=d.getElementById("m"),$act=d.getElementById("act"),$live=d.getElementById("live");
+d.getElementById("foot").textContent=T.foot;
+
+// ---------- parámetros: se leen UNA vez y se borran de la dirección (no quedan en el historial ni en capturas) ----------
+var tokenHash=qs.get("token_hash"), type=qs.get("type");
+try{history.replaceState(null,"",location.pathname+(qs.get("lang")?"?lang="+L:""))}catch(e){}
+var validParams=typeof tokenHash==="string"&&/^[A-Za-z0-9_-]{16,200}$/.test(tokenHash)&&typeof type==="string"&&Object.prototype.hasOwnProperty.call(TYPES,type);
+
+// ---------- estados ----------
+function show(state){
+  $card.className="card "+({ok:"ok",expired:"warn",invalid:"bad",error:"bad"}[state]||"");
+  $ico.textContent="";$act.textContent="";
+  var S={verifying:["vt","vm"],ok:["ot","om"],expired:["et","em"],invalid:["it","im"],error:["st","sm"]}[state];
+  $t.textContent=T[S[0]];$m.textContent=T[S[1]];$live.textContent=T[S[0]]+". "+T[S[1]];
+  if(state==="verifying"){var s=el("div","spin");s.setAttribute("role","presentation");$ico.appendChild(s);return}
+  $ico.textContent={ok:"✅",expired:"⏳",invalid:"⚠️",error:"📡"}[state];
+  if(state==="ok"){
+    var b=el("button","btn g",T.back);b.type="button";b.addEventListener("click",backToBitty);$act.appendChild(b);
+    if(!isMobile()){var a=el("a","lnk",T.desk);a.href=APP_DESKTOP;$act.appendChild(a)}
+  }
+  if(state==="error"&&validParams){var r=el("button","btn",T.retry);r.type="button";r.addEventListener("click",verify);$act.appendChild(r)}
+  if(state==="expired"||state==="invalid")resendForm();
+  if(state==="error"||state==="invalid"||state==="expired"){var w=el("a","lnk",T.back);w.href=WEB;$act.appendChild(w)}
+  try{$t.focus({preventScroll:true})}catch(e){}
+}
+function isMobile(){return /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent||"")}
+function backToBitty(){
+  // Android: intenta abrir la app; si no está instalada (la página sigue visible) se vuelve a la web
+  if(/Android/i.test(navigator.userAgent||"")){
+    var left=false,onv=function(){if(d.hidden)left=true};
+    d.addEventListener("visibilitychange",onv);nav(APP_ANDROID);
+    setTimeout(function(){d.removeEventListener("visibilitychange",onv);if(!left)nav(WEB)},1600);return;
+  }
+  nav(WEB);
+}
+
+// ---------- verificación (flujo oficial de Supabase Auth: POST /auth/v1/verify con token_hash) ----------
+function post(path,body,headers){
+  var h={apikey:SB.key,"Content-Type":"application/json"};for(var k in (headers||{}))h[k]=headers[k];
+  return fetch(SB.url+path,{method:"POST",headers:h,body:JSON.stringify(body||{}),referrerPolicy:"no-referrer",credentials:"omit"});
+}
+function verify(){
+  show("verifying");
+  return post("/auth/v1/verify",{type:type,token_hash:tokenHash}).then(function(r){
+    return r.json().catch(function(){return null}).then(function(j){
+      if(r.ok){
+        // La confirmación NO inicia sesión aquí: la sesión que devuelve Supabase se descarta y se revoca (solo este dispositivo).
+        if(j&&j.access_token)post("/auth/v1/logout?scope=local",{},{Authorization:"Bearer "+j.access_token}).catch(function(){});
+        try{sessionStorage.setItem("bitty_confirmed","1")}catch(e){}
+        tokenHash=null;return show("ok");
+      }
+      if(r.status>=500||r.status===429)return show("error");
+      if(r.status===403||r.status===401||r.status===404||(j&&j.error_code==="otp_expired"))return show("expired");   // inválido, caducado o ya usado: Supabase no los distingue
+      if(r.status===400||r.status===422)return show("invalid");
+      return show("error");
+    });
+  }).catch(function(){show("error")});
+}
+
+// ---------- reenvío del enlace (sin revelar si el correo existe; con espera mínima de 60 s) ----------
+function resendForm(){
+  var f=el("form");f.noValidate=true;
+  var lab=el("label","sr",T.rl);lab.htmlFor="em";
+  var i=el("input","inp");i.id="em";i.type="email";i.autocomplete="email";i.maxLength=120;i.placeholder=T.rl;i.setAttribute("inputmode","email");
+  var b=el("button","btn",T.rb);b.type="submit";
+  var msg=el("p","sm");msg.setAttribute("role","status");
+  f.appendChild(lab);f.appendChild(i);f.appendChild(b);f.appendChild(msg);
+  f.addEventListener("submit",function(ev){
+    ev.preventDefault();var email=i.value.trim();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)||email.length>120){msg.textContent=T.rbad;return}
+    var last=0;try{last=+localStorage.getItem("bitty_resend_t")||0}catch(e){}
+    if(Date.now()-last<60000){msg.textContent=T.rwait;return}
+    try{localStorage.setItem("bitty_resend_t",String(Date.now()))}catch(e){}
+    b.disabled=true;msg.textContent=T.sending;
+    post("/auth/v1/resend?redirect_to="+encodeURIComponent(WEB_CONFIRM),{type:"signup",email:email}).then(function(r){
+      b.disabled=false;
+      if(r.status===429)msg.textContent=T.rwait;
+      else if(r.status>=500)msg.textContent=T.rnet;
+      else msg.textContent=T.rok;                       // misma respuesta exista o no la cuenta
+    }).catch(function(){b.disabled=false;msg.textContent=T.rnet});
+  });
+  $act.appendChild(f);
+}
+
+// ---------- arranque ----------
+if(validParams)verify();
+else{
+  var done=false;try{done=sessionStorage.getItem("bitty_confirmed")==="1"}catch(e){}
+  show(done?"ok":"invalid");   // recargar tras confirmar muestra de nuevo «confirmado»
+}
+})();
+</script>
+</body>
+</html>

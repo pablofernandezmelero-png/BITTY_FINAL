@@ -30,6 +30,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Enlace profundo de la pagina de confirmacion de correo: com.bitty.app://confirmed
+                 (solo avisa; no lleva tokens ni inicia sesion). Los Android App Links https necesitarian un
+                 dominio propio con /.well-known/assetlinks.json, que GitHub Pages de proyecto no permite. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.bitty.app" android:host="confirmed" />
+            </intent-filter>
+
         </activity>
 
         <provider

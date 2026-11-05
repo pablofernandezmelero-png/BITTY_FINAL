@@ -10,9 +10,11 @@ vc.on("jsdomError",e=>errs.push("JSDOM: "+(e.detail&&e.detail.stack||e.message))
 vc.on("error",(...a)=>errs.push("console.error: "+a.join(" ")));
 const db={rows:{},st:{},cur:"",fac:{},sec:{},chal:{},nf:0,users:{"a@b.com":{id:"u1",pw:"password1"},"m@f.com":{id:"u9",pw:"password9"}}};
 const dom=new JSDOM(html.replace(/<link[^>]*fonts.googleapis[^>]*>/g,""),{runScripts:"dangerously",pretendToBeVisual:true,virtualConsole:vc,url:"http://localhost/",
- beforeParse(w){w.HTMLCanvasElement.prototype.getContext=()=>new Proxy({},{get:()=>()=>{},set:()=>true});
+ beforeParse(w){Object.defineProperty(w.navigator,"language",{value:"es-ES",configurable:true});w.HTMLCanvasElement.prototype.getContext=()=>new Proxy({},{get:()=>()=>{},set:()=>true});
   w.fetch=async(url,o={})=>{const u=new URL(url),b=o.body?JSON.parse(o.body):null;
    const R=(s,j)=>({ok:s<300,status:s,json:async()=>j});
+   if(u.pathname=="/auth/v1/token"&&u.searchParams.get("grant_type")=="password"&&b.email=="nc@x.com")return R(400,{error_code:"email_not_confirmed",msg:"Email not confirmed"});
+   if(u.pathname=="/auth/v1/resend"){db.resent=(db.resent||[]).concat([{b,redir:u.searchParams.get("redirect_to")}]);return db.resendFail?R(db.resendFail,{msg:"boom"}):R(200,{})}
    if(u.pathname=="/auth/v1/token"&&u.searchParams.get("grant_type")=="password"){const x=db.users[b.email];if(x&&x.pw==b.password)db.cur=x.id;return x&&x.pw==b.password?R(200,{access_token:(db.fac[x.id]||[]).some(f=>f.status=="verified")?jwt("aal1"):"T",refresh_token:"R",expires_in:3600,user:{id:x.id,email:b.email,factors:db.fac[x.id]||[]}}):R(400,{error_description:"Invalid login credentials"})}
    if(u.pathname=="/auth/v1/user"&&(o.method||"GET")=="GET")return R(200,{id:db.cur,email:"x@y.z",factors:db.fac[db.cur]||[]});
    if(u.pathname=="/auth/v1/factors"&&o.method=="POST"){const id="00000000-0000-4000-8000-"+String(++db.nf).padStart(12,"0");db.sec[id]="JBSWY3DPEHPK3PXP";db.enr=b;
@@ -23,9 +25,9 @@ const dom=new JSDOM(html.replace(/<link[^>]*fonts.googleapis[^>]*>/g,""),{runScr
      if(m[2]=="/verify"){if(db.chal[b.challenge_id]!=id||b.code!=totp(db.sec[id]))return R(400,{message:"Invalid TOTP code entered"});f.status="verified";db.aal2=(db.aal2||0)+1;return R(200,{access_token:jwt("aal2"),refresh_token:"R2",expires_in:3600,user:{id:db.cur,email:"x@y.z"}})}
      if(o.method=="DELETE"){db.fac[db.cur]=db.fac[db.cur].filter(x=>x.id!=id);return R(200,{id})}}}
    if(u.pathname=="/rest/v1/rpc/delete_my_account"){db.del=(db.del||0)+1;if(db.delFail)return R(400,{message:"mfa_required"});db.deleted=db.cur;return R(200,null)}
-   if(u.pathname=="/auth/v1/signup")return R(200,{id:"u2",email:b.email});
+   if(u.pathname=="/auth/v1/signup"){db.signupRedir=u.searchParams.get("redirect_to");return R(200,{id:"u2",email:b.email})}
    if(u.pathname=="/auth/v1/otp"){db.otpRedir=u.searchParams.get("redirect_to");return R(200,{})}
-   if(u.pathname=="/auth/v1/logout")return R(204,null);
+   if(u.pathname=="/auth/v1/logout"){db.logoutQ=u.search;return R(204,null)}
    if(u.pathname=="/auth/v1/recover"){db.rec=b.email;db.redir=u.searchParams.get("redirect_to");return R(200,{})}
    if(u.pathname=="/auth/v1/user"&&o.method=="PUT"){db.newpw=b.password;return R(200,{})}
    if(u.pathname=="/rest/v1/profiles"){db.profiles=b;return R(201,null)}
@@ -41,7 +43,8 @@ const dom=new JSDOM(html.replace(/<link[^>]*fonts.googleapis[^>]*>/g,""),{runScr
 const w=dom.window;w.addEventListener("error",e=>errs.push("window error: "+e.message));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const out=[];const ok=(n,c)=>out.push((c?"ok  ":"FALLO ")+n);
-const T=()=>w.document.body.textContent;
+// Solo el texto VISIBLE (app, aviso y banner sin conexión): el <body> también contiene el código del script, que incluye todos los textos de la interfaz
+const T=()=>(()=>{const a=w.document.querySelector("#app");return (a?a.textContent:"")+" "+[...w.document.querySelectorAll("#tst,#offb")].map(e=>e.textContent).join(" ")})();
 const ev=s=>w.eval(s);
 const setf=(e,p)=>ev(`document.querySelector("#cE").value=${JSON.stringify(e)};${p!=null?`document.querySelector("#cP").value=${JSON.stringify(p)};`:""}`);
 (async()=>{await sleep(800);
@@ -151,4 +154,31 @@ const setf=(e,p)=>ev(`document.querySelector("#cE").value=${JSON.stringify(e)};$
  db.delFail=0;ev(`S.xp=123;save()`);await ev(`cdel()`);await sleep(200);
  ok("confirmando: llama al servidor, cierra sesión y vuelve al login",db.del==2&&db.deleted=="u1"&&ev(`AU`)===null&&!!w.document.querySelector("#cE")&&/Cuenta eliminada/.test(T()));
  ok("el progreso local no se borra",ev(`S.xp`)==123);
+ // ===== PDF: confirmación de correo, reenvío, cierre de sesión local y cambio de contraseña =====
+ ok("el registro indica la página pública de confirmación como destino",db.signupRedir==="https://pablofernandezmelero-png.github.io/BITTY_FINAL/auth/confirm/");
+ await ev(`cout()`);await sleep(100);
+ ok("cerrar sesión revoca solo la sesión de ESTE dispositivo (scope=local)",db.logoutQ==="?scope=local");
+ setf("nc@x.com","password1");ev(`cgo("i")`);await sleep(250);
+ ok("cuenta sin confirmar: aviso claro y botón para reenviar el correo",/aún no está confirmado/.test(T())&&/Reenviar correo de confirmación/.test(T())&&ev(`AU`)===null);
+ w.localStorage.removeItem("bitty_resend_t");db.resent=[];ev(`cresend()`);await sleep(200);
+ ok("reenviar: type=signup, correo y redirect_to a la página de confirmación",db.resent.length===1&&db.resent[0].b.type==="signup"&&db.resent[0].b.email==="nc@x.com"&&db.resent[0].redir==="https://pablofernandezmelero-png.github.io/BITTY_FINAL/auth/confirm/");
+ const okMsg=T().match(/Si existe una cuenta pendiente[^.]*\./);
+ ok("la respuesta no revela si la cuenta existe",!!okMsg);
+ ev(`cresend()`);await sleep(100);
+ ok("un segundo reenvío en menos de 60 s se bloquea en el cliente",db.resent.length===1&&/Espera un poco/.test(T()));
+ w.localStorage.removeItem("bitty_resend_t");db.resendFail=500;ev(`cresend()`);await sleep(200);
+ ok("error del servidor al reenviar: avisa sin romper",/No se pudo enviar/.test(T())&&db.resent.length===2);
+ w.localStorage.removeItem("bitty_resend_t");db.resendFail=400;setf("fantasma@x.com","password1");ev(`cresend()`);await sleep(200);
+ ok("si el servidor rechaza el reenvío con un 4xx (p. ej. cuenta inexistente), la respuesta sigue siendo la genérica (no revela nada)",(T().match(/Si existe una cuenta pendiente[^.]*\./)||[])[0]===okMsg[0]);
+ db.resendFail=0;w.localStorage.removeItem("bitty_resend_t");setf("noexiste@x.com","password1");ev(`cresend()`);await sleep(200);
+ ok("con otro correo la respuesta es idéntica (sin enumeración)",(T().match(/Si existe una cuenta pendiente[^.]*\./)||[])[0]===okMsg[0]);
+ setf("a@b.com","password1");ev(`cgo("i")`);await sleep(300);
+ ev(`tab="p";home()`);await sleep(200);
+ ok("el perfil con sesión ofrece «Cambiar contraseña»",/Cambiar contraseña/.test(T()));
+ ev(`cmsg='';bwnp()`);
+ ok("pantalla de cambio de contraseña con botón «Cancelar»",!!w.document.querySelector("#cN1")&&/Cancelar/.test(T()));
+ [...w.document.querySelectorAll("#app button")].find(b=>/Cancelar/.test(b.textContent)).click();await sleep(100);
+ ok("cancelar vuelve al perfil sin cambiar nada",!w.document.querySelector("#cN1")&&/Cuenta y nube/.test(T())&&db.newpw!=="cambiada123");
+ ev(`cmsg='';bwnp()`);ev(`document.querySelector("#cN1").value="cambiada123";document.querySelector("#cN2").value="cambiada123";bnpw()`);await sleep(300);
+ ok("cambiar la contraseña desde el perfil la guarda en el servidor y vuelve a la app",db.newpw==="cambiada123"&&!w.document.querySelector("#cN1"));
  console.log(out.join("\n"));console.log("ERRORES JS:",errs.length);errs.forEach(e=>console.log(e));process.exit(out.some(x=>x.startsWith("FALLO"))||errs.length?1:0)})();

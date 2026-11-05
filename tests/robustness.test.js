@@ -43,6 +43,7 @@ async function boot({ store = {}, srv = server(), wrap = null, ms = 700, hash = 
       if (confirmFn) w.confirm = confirmFn;
       w.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, { get: () => () => {}, set: () => true });
       w.Element.prototype.scrollIntoView = () => {};
+      Object.defineProperty(w.navigator,"language",{value:"es-ES",configurable:true});
       w.matchMedia = w.matchMedia || (() => ({ matches: false, addEventListener() {} }));
       for (const k in store) w.localStorage.setItem(k, store[k]);
       w.fetch = srv.fetch;
@@ -52,7 +53,7 @@ async function boot({ store = {}, srv = server(), wrap = null, ms = 700, hash = 
   const w = dom.window;
   w.addEventListener("error", e => errs.push("window error: " + e.message));
   await sleep(ms);
-  return { w, errs, srv, ev: s => w.eval(s), T: () => w.document.body.textContent, ls: k => { try { return w.localStorage.getItem(k); } catch (e) { return null; } } };
+  return { w, errs, srv, ev: s => w.eval(s), T: () => (()=>{const a=w.document.querySelector("#app");return (a?a.textContent:"")+" "+[...w.document.querySelectorAll("#tst,#offb")].map(e=>e.textContent).join(" ")})(), ls: k => { try { return w.localStorage.getItem(k); } catch (e) { return null; } } };
 }
 const GOOD = (o = {}) => JSON.stringify(Object.assign({ v: 2, name: "Ana", track: "g", dif: 1, done: { "g:1": 3 }, xp: 120, streak: 2, last: "2026-11-04", sp: [], hist: ["a", "b"], hd: {}, ch: {}, cn: {}, lang: "es" }, o));
 
@@ -80,7 +81,7 @@ const GOOD = (o = {}) => JSON.stringify(Object.assign({ v: 2, name: "Ana", track
   ok(stored && stored.length <= 1.2e6 && ps.xp === 4999 && ps.name === "Ana" && ps.hist.length >= 200 && ps.hist.length < 40000, `cuota llena: el estado se guarda recortando el historial (guardado ${(stored || "").length} caracteres, historial ${ps && ps.hist.length}, xp ${ps && ps.xp})`);
   ok(b.ev("HSs.size") === ps.hist.length, "el índice anti-repetición queda coherente con el historial recortado");
   // 6) datos de una versión antigua
-  b = await boot({ store: { bitty: '{"name":"Ana","xp":120,"track":"g","done":{"g":3}}' } });
+  b = await boot({ store: { bitty: '{"name":"Ana","xp":120,"track":"g","done":{"g":3}}', bitty_guest: "1" } });
   ok(b.errs.length === 0 && b.ev("S.xp") === 120 && /Ana/.test(b.T()), "estado de formato antiguo: se conserva el XP y se muestra la app");
   // 7) contenido hostil guardado o devuelto por el servidor se muestra como texto
   b = await boot({ store: { bitty: GOOD({ name: "<u>zz</u>" }), bitty_guest: "1" } });

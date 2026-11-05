@@ -14,11 +14,12 @@ const dom = new JSDOM(html, {
   runScripts: "dangerously", pretendToBeVisual: true, virtualConsole: vc, url: "http://localhost/",
   beforeParse(w) {
     w.Element.prototype.scrollIntoView = () => {};
+    Object.defineProperty(w.navigator,"language",{value:"es-ES",configurable:true});
     w.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, { get: () => () => {}, set: () => true });
     w.fetch = async () => ({ ok: false, status: 404, json: async () => ({}) });
     const A = cap.ad;
     w.Capacitor = { isNativePlatform: () => true, Plugins: {
-      App: { addListener(n, f) { if (n === "backButton") cap.cb = f; }, exitApp() { cap.exited++; } },
+      App: { addListener(n, f) { if (n === "backButton") cap.cb = f; if (n === "appUrlOpen") cap.deep = f; }, exitApp() { cap.exited++; } },
       AdMob: {
         async requestConsentInfo() { A.calls.push("consent"); return { status: "NOT_REQUIRED", isConsentFormAvailable: false, canRequestAds: true }; },
         async initialize(o) { A.calls.push("init"); A.opts.init = o; },
@@ -35,13 +36,15 @@ const w = dom.window;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const out = [], ok = (n, c) => out.push((c ? "ok  " : "FALLO ") + n);
 const ev = s => w.eval(s);
+// Solo el texto VISIBLE: el <body> también contiene el código del script, con todos los textos de la interfaz
+const VISTXT = () => (w.document.querySelector("#app") || { textContent: "" }).textContent + " " + [...w.document.querySelectorAll("#tst,#offb")].map(e => e.textContent).join(" ");
 const back = () => cap.cb && cap.cb({ canGoBack: false });
 (async () => {
   await sleep(600);
   ok("se registra el listener de backButton", typeof cap.cb === "function");
   ev(`S.lang="es";S.name="Ana";S.track="g";S.dif=1;AS=0;tab="r";home()`);
   // raíz: primera pulsación avisa, segunda sale
-  back(); ok("en la raíz: 1ª pulsación avisa y NO sale", cap.exited === 0 && /otra vez para salir/.test(w.document.body.textContent));
+  back(); ok("en la raíz: 1ª pulsación avisa y NO sale", cap.exited === 0 && /otra vez para salir/.test(VISTXT()));
   back(); ok("en la raíz: 2ª pulsación seguida sale", cap.exited === 1);
   // pestañas
   ev(`tab="p";home()`); back(); ok("desde Perfil vuelve a Ruta", ev(`tab`) === "r");
@@ -81,23 +84,43 @@ const back = () => cap.cb && cap.cb({ canGoBack: false });
   ev(`home()`); await sleep(80); ok("banner vuelve en el inicio", lastBan() === "showBanner");
   ev(`wl()`); await sleep(80); ok("banner oculto en el login", lastBan() === "hideBanner");
   ev(`AS=0;tab="p";home()`); await sleep(80);
-  ok("el perfil ofrece el bonus de vídeo", /Bonus de bytes/.test(w.document.body.textContent) && /Ver vídeo/.test(w.document.body.textContent));
+  ok("el perfil ofrece el bonus de vídeo", /Bonus de bytes/.test(VISTXT()) && /Ver vídeo/.test(VISTXT()));
   const xp0 = ev(`S.xp`); A.calls.length = 0;
   ev(`adWatch()`); await sleep(150);
   ok("ver el vídeo usa el ID de prueba y concede +10", A.opts.rewarded.adId === "ca-app-pub-3940256099942544/5224354917" && A.opts.rewarded.isTesting === true && ev(`S.xp`) === xp0 + 10);
   const xq = JSON.parse(w.localStorage.getItem("bitty_xq") || "[]"), ev1 = xq[xq.length - 1];
   ok("el bonus se encola como evento 'ad' validable por el servidor", ev1 && ev1.kind === "ad" && ev1.xp === 10 && /^ad:\d{4}-\d{2}-\d{2}:1$/.test(ev1.ref) && ev1.ref.split(":")[1] === ev1.day);
   A.calls.length = 0; ev(`adWatch()`); await sleep(100);
-  ok("control de frecuencia: no hay segundo vídeo seguido", !A.calls.includes("showReward") && /Espera/.test(w.document.body.textContent));
+  ok("control de frecuencia: no hay segundo vídeo seguido", !A.calls.includes("showReward") && /Espera/.test(VISTXT()));
   w.localStorage.setItem("bitty_ads", JSON.stringify({ d: ev(`dstr(new Date())`), n: 1, t: 0 })); A.reward = false; const xp1 = ev(`S.xp`);
-  ev(`adWatch()`); await sleep(150); ok("si no se completa el vídeo, no hay bonus", ev(`S.xp`) === xp1 && /no hay bonus/.test(w.document.body.textContent));
+  ev(`adWatch()`); await sleep(150); ok("si no se completa el vídeo, no hay bonus", ev(`S.xp`) === xp1 && /no hay bonus/.test(VISTXT()));
   A.reward = true;
   w.localStorage.setItem("bitty_ads", JSON.stringify({ d: ev(`dstr(new Date())`), n: 3, t: 0 })); A.calls.length = 0;
-  ev(`adWatch()`); await sleep(100); ok("límite diario: 3 bonus", !A.calls.includes("showReward") && /todos los bonus/.test(w.document.body.textContent));
+  ev(`adWatch()`); await sleep(100); ok("límite diario: 3 bonus", !A.calls.includes("showReward") && /todos los bonus/.test(VISTXT()));
   w.localStorage.setItem("bitty_ads", JSON.stringify({ d: ev(`dstr(new Date())`), n: 0, t: 0 })); A.calls.length = 0;
   ev(`go(0)`); ev(`adWatch()`); await sleep(100); ok("no se puede lanzar un anuncio durante un nivel", !A.calls.includes("showReward") && !A.calls.includes("prepare"));
   ev(`home()`);
   ok("solo hay IDs de prueba de Google en el código", !/ca-app-pub-(?!3940256099942544)/.test(html));
+  // ===== enlace profundo y manifiesto (confirmación de correo) =====
+  ev(`S.lang="es";AS=1;AU=null;amode="i";wl()`);
+  ok("se registra el listener appUrlOpen", typeof cap.deep === "function");
+  cap.deep({ url: "com.bitty.app://confirmed" }); await sleep(30);
+  ok("com.bitty.app://confirmed en la pantalla de acceso: «¡Correo confirmado!» y deja iniciar sesión", /¡Correo confirmado! Ya puedes iniciar sesión/.test(w.document.querySelector("#app").textContent) && !!w.document.querySelector("#cE"));
+  for (const bad of ["com.bitty.app://confirmed?token_hash=abc", "com.bitty.app://confirmed#access_token=x", "com.bitty.app://otra", "https://evil.example/confirmed", "otro.esquema://confirmed", "no es una url", ""]) {
+    ev(`AS=1;cmsg="";wl()`); cap.deep({ url: bad }); await sleep(20);
+    ok(`enlace profundo no admitido ignorado: «${bad}»`, !/Correo confirmado/.test(w.document.querySelector("#app").textContent) && ev(`AU`) === null);
+  }
+  ev(`AS=0;tab="r";home();go(0)`); cap.deep({ url: "com.bitty.app://confirmed" }); await sleep(30);
+  ok("con una partida en curso el enlace no interrumpe: solo un aviso", !!w.document.querySelector('[onclick="xq()"]'));
+  ev(`home()`);
+  ev(`bwnp()`); ok("pantalla de nueva contraseña visible", !!w.document.querySelector("#cN1"));
+  back(); ok("botón atrás en la pantalla de contraseña: vuelve al perfil sin salir de la app", !w.document.querySelector("#cN1") && ev(`tab`) === "p");
+  const mf = fs.readFileSync("android/app/src/main/AndroidManifest.xml", "utf8");
+  const filters = [...mf.matchAll(/<intent-filter>[\s\S]*?<\/intent-filter>/g)].map(m => m[0]);
+  const browsable = filters.filter(f => /BROWSABLE/.test(f));
+  ok("manifiesto: un único filtro BROWSABLE, solo com.bitty.app://confirmed", browsable.length === 1 && /android:scheme="com\.bitty\.app"/.test(browsable[0]) && /android:host="confirmed"/.test(browsable[0]));
+  ok("manifiesto: sin App Links https ni autoVerify (requieren un dominio propio con assetlinks.json)", !/android:scheme="https?"/.test(mf) && !/autoVerify/.test(mf));
+  ok("manifiesto: solo la actividad principal está exportada", (mf.match(/android:exported="true"/g) || []).length === 1);
   console.log(out.join("\n")); console.log("ERRORES JS:", errs.length); errs.forEach(e => console.log(e));
   process.exit(out.some(x => x.startsWith("FALLO")) || errs.length ? 1 : 0);
 })();

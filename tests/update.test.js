@@ -38,6 +38,7 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
   await t.w.eval("updCheck()");
   ok(!!t.bar(), "build 5 publicada y la app es la 3: aparece el aviso");
   ok(/versión nueva de Bitty/.test(t.bar().textContent) && /Descargar/.test(t.bar().textContent) && /Más tarde/.test(t.bar().textContent), "el aviso está en español con «Descargar» y «Más tarde»");
+  ok(/\(versión 5\)/.test(t.bar().textContent), "el aviso dice qué versión es la nueva (versión 5)");
   const a = t.w.document.querySelector("#updOk");
   ok(a && a.tagName === "A" && a.href === PAGE && a.target === "_blank" && /noopener/.test(a.rel), "«Descargar» lleva a la página pública /descargar/ (constante), en pestaña nueva y con noopener");
   ok(!t.w.document.body.innerHTML.includes("evil.example"), "nada de lo que devuelve la API decide el destino del enlace");
@@ -85,9 +86,9 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
 
   // ---- idiomas
   x = boot({ build: 3, rel: rel("build-5"), lang: "en-US" }); await sleep(100); await x.w.eval("updCheck()");
-  ok(/new version of Bitty/.test(x.bar().textContent) && /Download/.test(x.bar().textContent), "aviso en inglés");
+  ok(/new version of Bitty is available \(version 5\)/.test(x.bar().textContent) && /Download/.test(x.bar().textContent), "aviso en inglés, con la versión");
   x = boot({ build: 3, rel: rel("build-5"), lang: "nl-NL" }); await sleep(100); await x.w.eval("updCheck()");
-  ok(/nieuwe versie van Bitty/.test(x.bar().textContent) && /Downloaden/.test(x.bar().textContent), "aviso en neerlandés");
+  ok(/nieuwe versie van Bitty \(versie 5\)/.test(x.bar().textContent) && /Downloaden/.test(x.bar().textContent), "aviso en neerlandés, con la versión");
 
   // ---- web/PWA: versión nueva del service worker
   x = boot({ native: false, sw: "ctl" }); await sleep(100);
@@ -103,12 +104,13 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
   const mk = (h) => { const dom = new JSDOM(dl, { runScripts: "dangerously", pretendToBeVisual: true, url: "https://pablofernandezmelero-png.github.io/BITTY_FINAL/descargar/", virtualConsole: new VirtualConsole(), beforeParse(w) { Object.defineProperty(w.navigator, "language", { value: h.lang || "es-ES", configurable: true }); w.fetch = async u => { h.calls.push(String(u)); return h.f(String(u)); }; } }); return dom.window; };
   const R = (body, status = 200) => ({ ok: status < 400, status, json: async () => body });
   const apk = (u, o = {}) => R(Object.assign({ tag_name: "build-7", published_at: "2026-11-05T10:00:00Z", draft: false, prerelease: false, assets: [{ name: "Bitty.apk", size: 9437184, browser_download_url: u || OKU + "build-7/Bitty.apk" }] }, o));
-  let h = { calls: [], f: u => /\/latest$/.test(u) ? apk() : R({ tag_name: "desktop-latest", assets: [{ name: "Bitty-Setup.exe", size: 121700240, browser_download_url: OKU + "desktop-latest/Bitty-Setup.exe" }] }) };
+  let h = { calls: [], f: u => /\/latest$/.test(u) ? apk() : R({ tag_name: "desktop-latest", published_at: "2026-11-05T18:27:39Z", assets: [{ name: "Bitty-Setup.exe", size: 121700240, browser_download_url: OKU + "desktop-latest/Bitty-Setup.exe" }] }) };
   let p = mk(h); await sleep(150);
   const A = p.document.querySelector("#aA"), W = p.document.querySelector("#aW");
   ok(A && A.href === OKU + "build-7/Bitty.apk" && /Descargar APK/.test(A.textContent), "descargar: botón de la última APK con su enlace a la Release");
   ok(/Versión 7/.test(p.document.querySelector("#mA").textContent) && /9\.0 MB/.test(p.document.querySelector("#mA").textContent), "muestra la versión y el tamaño");
   ok(W && W.href === OKU + "desktop-latest/Bitty-Setup.exe" && /Windows/.test(W.textContent), "descargar: botón del instalador de Windows");
+  ok(/^Actualizado 2026-11-05 · 116\.1 MB$/.test(p.document.querySelector("#mW").textContent) && !/Versión/.test(p.document.querySelector("#mW").textContent), "descargar: Windows muestra «Actualizado <fecha>», no una falsa versión");
   ok(h.calls.includes(API) && h.calls.includes("https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/tags/desktop-latest") && h.calls.every(u => u.startsWith("https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/")), "solo consulta la API de este repositorio");
   ok(p.document.querySelector("#bB").getAttribute("href") === "../" && p.document.querySelector("#bI").getAttribute("href") === "../", "enlaces a la web y a las instrucciones de iPhone");
   ok(/Compartir/.test(p.document.querySelector("#oI").textContent) && /pantalla de inicio/.test(p.document.querySelector("#oI").textContent), "instrucciones de iPhone");
@@ -144,7 +146,8 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
     ok(/if: \$\{\{ inputs\.publish_release \}\}/.test(s), f + ": el paso de publicar solo se ejecuta si lo pides");
     ok(/GH_TOKEN: \$\{\{ github\.token \}\}/.test(s) && !/secrets\.GITHUB_TOKEN|ghp_/.test(s), f + ": usa el token temporal del workflow, ningún token guardado");
   }
-  ok(/gh release create "build-\$RUN_NUMBER" Bitty\.apk[\s\S]*--latest/.test(wf("android.yml")) && /gh release create "build-\$BITTY_VERSION_CODE" Bitty\.apk[\s\S]*--latest/.test(wf("android-release.yml")), "las APK se publican como Release build-N marcada «latest» con el archivo Bitty.apk");
+  ok(/gh release create "build-\$BITTY_VERSION_CODE" Bitty\.apk[\s\S]*--latest/.test(wf("android-release.yml")), "la APK FIRMADA se publica como Release build-N marcada «latest» con el archivo Bitty.apk");
+  ok(/gh release create "build-\$RUN_NUMBER" Bitty\.apk .*--prerelease --latest=false/.test(wf("android.yml")) && !/--latest(?!=false)/.test(wf("android.yml").split("gh release create")[1]), "la APK de PRUEBA se publica como versión preliminar y NUNCA como «latest» (la página y el aviso solo ofrecen la firmada)");
   ok(/BITTY_VERSION_CODE: \$\{\{ github\.run_number \}\}/.test(wf("android.yml")), "APK de prueba: versionCode = número de ejecución (el mismo N que la etiqueta build-N)");
   ok(/BITTY_VERSION_CODE=\$\(\(1000 \+ GITHUB_RUN_NUMBER\)\)" >> "\$GITHUB_ENV"/.test(wf("android-release.yml")) && !/BITTY_VERSION_CODE: \$\{\{/.test(wf("android-release.yml")), "APK firmada: versionCode = 1000 + ejecución (su numeración no choca con la de las de prueba) y la etiqueta usa ese mismo número");
   ok(/apksigner[\s\S]*verify --verbose --print-certs[\s\S]*APK Signature Scheme v2\): true[\s\S]*CN=Bitty/.test(wf("android-release.yml")), "APK firmada: el workflow comprueba la firma con apksigner (v2 y certificado de Bitty) antes de publicar");

@@ -1552,7 +1552,7 @@ async function updCheck(){
   if(!m||j.draft||j.prerelease)return;
   localStorage.setItem("bitty_upd_t",String(Date.now()));
   const n=+m[1];if(n<=cur||localStorage.getItem("bitty_upd_skip")===String(n))return;
-  updBar(tt("Hay una versión nueva de Bitty. Descárgala e instálala para tener las últimas mejoras.","A new version of Bitty is available. Download and install it to get the latest improvements.","Er is een nieuwe versie van Bitty. Download en installeer die voor de nieuwste verbeteringen."),tt("Descargar","Download","Downloaden"),null,UPD.page,()=>{try{localStorage.setItem("bitty_upd_skip",String(n))}catch(e){}})
+  updBar(tt("Hay una versión nueva de Bitty (versión "+n+"). Descárgala e instálala para tener las últimas mejoras.","A new version of Bitty is available (version "+n+"). Download and install it to get the latest improvements.","Er is een nieuwe versie van Bitty (versie "+n+"). Download en installeer die voor de nieuwste verbeteringen."),tt("Descargar","Download","Downloaden"),null,UPD.page,()=>{try{localStorage.setItem("bitty_upd_skip",String(n))}catch(e){}})
  }catch(e){}}
 setTimeout(updCheck,4000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(updCheck,1500)});
 // Web/PWA: cuando el service worker nuevo toma el control, la pestaña sigue con el código viejo hasta recargar: se ofrece recargar (sin hacerlo solo, por si hay un nivel en curso).

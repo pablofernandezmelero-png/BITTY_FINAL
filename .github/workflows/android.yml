@@ -77,6 +77,8 @@ jobs:
           RUN_NUMBER: ${{ github.run_number }}
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk Bitty.apk
-          gh release create "build-$RUN_NUMBER" Bitty.apk --repo "$GITHUB_REPOSITORY" --latest \
-            --title "Bitty build $RUN_NUMBER (APK de prueba)" \
-            --notes "APK de depuracion de Bitty, compilacion $RUN_NUMBER, commit $GITHUB_SHA. Firmada con clave de depuracion: para actualizar encima de otra compilacion, desinstala la anterior."
+          # Version preliminar y NUNCA «latest»: la pagina /descargar/ y el aviso de la app solo ofrecen la ultima APK FIRMADA
+          # (workflow "Build Android Release (firmado)"), no una de depuracion.
+          gh release create "build-$RUN_NUMBER" Bitty.apk --repo "$GITHUB_REPOSITORY" --prerelease --latest=false \
+            --title "Bitty build $RUN_NUMBER (APK de prueba, sin firma propia)" \
+            --notes "APK de DEPURACION de Bitty, compilacion $RUN_NUMBER, commit $GITHUB_SHA. Solo para pruebas: firmada con una clave de depuracion distinta en cada compilacion (hay que desinstalar la anterior para instalarla). La version oficial es la firmada."

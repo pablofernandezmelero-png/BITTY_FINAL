@@ -21,7 +21,8 @@ Tú lanzas el workflow con "publish_release" ──► GitHub Release «build-N�
 
 ## Publicar una versión (tú, en GitHub)
 
-1. **Actions → Build Android APK** (o *Build Android Release (firmado)*) **→ Run workflow**, marcando **publish_release**.
+1. **Actions → Build Android Release (firmado) → Run workflow**, marcando **publish_release**. Es la versión oficial: firmada con la clave de Bitty (secretos del repositorio), verificada con `apksigner` antes de publicar, numeración 1000 + ejecución (`build-1004`, `build-1005`…) y marcada como «latest»: la que ofrecen la página `/descargar/` y el aviso de la app.
+   *Build Android APK* (depuración) con `publish_release` publica una Release **preliminar y nunca «latest»** (`build-6`…): sirve para pruebas y ni la página ni el aviso la ofrecen.
 2. Para Windows: **Actions → Build Bitty Desktop (Windows) → Run workflow** con **publish_release**.
 3. Comprueba en `https://pablofernandezmelero-png.github.io/BITTY_FINAL/descargar/` que aparece la versión nueva.
 

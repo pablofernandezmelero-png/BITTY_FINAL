@@ -63,6 +63,9 @@ jobs:
       - name: Sincronizar la web con Android
         run: npx cap sync android
 
+      - name: Calcular el numero de version (1000 + ejecucion, para no chocar con las APK de prueba)
+        run: echo "BITTY_VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+
       - name: Restaurar el keystore (solo en el runner)
         env:
           KS_B64: ${{ secrets.BITTY_KEYSTORE_BASE64 }}
@@ -73,7 +76,6 @@ jobs:
       - name: Compilar AAB y APK de release firmados
         working-directory: android
         env:
-          BITTY_VERSION_CODE: ${{ github.run_number }}
           BITTY_KEYSTORE_PASSWORD: ${{ secrets.BITTY_KEYSTORE_PASSWORD }}
           BITTY_KEY_ALIAS: ${{ secrets.BITTY_KEY_ALIAS }}
           BITTY_KEY_PASSWORD: ${{ secrets.BITTY_KEY_PASSWORD }}
@@ -87,6 +89,13 @@ jobs:
         run: |
           test -f android/app/build/outputs/bundle/release/app-release.aab
           test -f android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Verificar la firma de la APK (apksigner)
+        run: |
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)
+          "$APKSIGNER" verify --verbose --print-certs android/app/build/outputs/apk/release/app-release.apk | tee firma.txt
+          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" firma.txt
+          grep -q "Signer #1 certificate DN: CN=Bitty" firma.txt
 
       - name: Subir AAB y APK
         uses: actions/upload-artifact@v4
@@ -102,9 +111,8 @@ jobs:
         if: ${{ inputs.publish_release }}
         env:
           GH_TOKEN: ${{ github.token }}
-          RUN_NUMBER: ${{ github.run_number }}
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk Bitty.apk
-          gh release create "build-$RUN_NUMBER" Bitty.apk --repo "$GITHUB_REPOSITORY" --latest \
-            --title "Bitty build $RUN_NUMBER" \
-            --notes "APK de Bitty firmada, compilacion $RUN_NUMBER, commit $GITHUB_SHA."
+          gh release create "build-$BITTY_VERSION_CODE" Bitty.apk --repo "$GITHUB_REPOSITORY" --latest \
+            --title "Bitty build $BITTY_VERSION_CODE" \
+            --notes "APK de Bitty firmada con la clave de Bitty, compilacion $BITTY_VERSION_CODE, commit $GITHUB_SHA. Se puede instalar encima de otra APK firmada con la misma clave."

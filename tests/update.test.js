@@ -144,8 +144,11 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
     ok(/if: \$\{\{ inputs\.publish_release \}\}/.test(s), f + ": el paso de publicar solo se ejecuta si lo pides");
     ok(/GH_TOKEN: \$\{\{ github\.token \}\}/.test(s) && !/secrets\.GITHUB_TOKEN|ghp_/.test(s), f + ": usa el token temporal del workflow, ningún token guardado");
   }
-  ok(/gh release create "build-\$RUN_NUMBER" Bitty\.apk[\s\S]*--latest/.test(wf("android.yml")) && /gh release create "build-\$RUN_NUMBER" Bitty\.apk[\s\S]*--latest/.test(wf("android-release.yml")), "las APK se publican como Release build-N marcada «latest» con el archivo Bitty.apk");
-  ok(/BITTY_VERSION_CODE: \$\{\{ github\.run_number \}\}/.test(wf("android.yml")) && /BITTY_VERSION_CODE: \$\{\{ github\.run_number \}\}/.test(wf("android-release.yml")), "versionCode = número de ejecución (el mismo N que la etiqueta build-N)");
+  ok(/gh release create "build-\$RUN_NUMBER" Bitty\.apk[\s\S]*--latest/.test(wf("android.yml")) && /gh release create "build-\$BITTY_VERSION_CODE" Bitty\.apk[\s\S]*--latest/.test(wf("android-release.yml")), "las APK se publican como Release build-N marcada «latest» con el archivo Bitty.apk");
+  ok(/BITTY_VERSION_CODE: \$\{\{ github\.run_number \}\}/.test(wf("android.yml")), "APK de prueba: versionCode = número de ejecución (el mismo N que la etiqueta build-N)");
+  ok(/BITTY_VERSION_CODE=\$\(\(1000 \+ GITHUB_RUN_NUMBER\)\)" >> "\$GITHUB_ENV"/.test(wf("android-release.yml")) && !/BITTY_VERSION_CODE: \$\{\{/.test(wf("android-release.yml")), "APK firmada: versionCode = 1000 + ejecución (su numeración no choca con la de las de prueba) y la etiqueta usa ese mismo número");
+  ok(/apksigner[\s\S]*verify --verbose --print-certs[\s\S]*APK Signature Scheme v2\): true[\s\S]*CN=Bitty/.test(wf("android-release.yml")), "APK firmada: el workflow comprueba la firma con apksigner (v2 y certificado de Bitty) antes de publicar");
+  ok(wf("android-release.yml").indexOf("- name: Verificar la firma") < wf("android-release.yml").indexOf("- name: Publicar la APK firmada"), "la firma se verifica antes de publicar");
   const gradle = fs.readFileSync(path.join(root, "android", "app", "build.gradle"), "utf8");
   ok(/^def bittyVersionCode = Integer\.parseInt\(System\.getenv\("BITTY_VERSION_CODE"\) \?: "1"\)$/m.test(gradle) && /^\s+versionCode bittyVersionCode$/m.test(gradle), "gradle lee BITTY_VERSION_CODE con una variable simple (la forma anterior rompía la compilación)");
   ok(!/versionCode \(/.test(gradle), "gradle: sin la sintaxis ambigua «versionCode (…)» que rompió el workflow");

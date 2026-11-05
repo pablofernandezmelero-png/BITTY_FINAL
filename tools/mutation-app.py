@@ -3,7 +3,7 @@
 #   python tools/mutation-app.py
 import subprocess, os, sys
 root = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-H = os.path.join(root, "www", "index.html"); MF = os.path.join(root, "android", "app", "src", "main", "AndroidManifest.xml"); SW = os.path.join(root, "www", "sw.js"); DL = os.path.join(root, "www", "descargar", "index.html"); WA = os.path.join(root, ".github", "workflows", "android.yml")
+H = os.path.join(root, "www", "index.html"); MF = os.path.join(root, "android", "app", "src", "main", "AndroidManifest.xml"); SW = os.path.join(root, "www", "sw.js"); DL = os.path.join(root, "www", "descargar", "index.html"); WA = os.path.join(root, ".github", "workflows", "android.yml"); GR = os.path.join(root, "android", "app", "build.gradle")
 M = [
  (H, "el registro deja de indicar la página de confirmación", 'k=="s"?"/auth/v1/signup"+RURLC():', 'k=="s"?"/auth/v1/signup":', "cloud"),
  (H, "el reenvío pierde la espera de 60 s", 'if(Date.now()-last<60000){cmsg=', 'if(false){cmsg=', "cloud"),
@@ -44,6 +44,7 @@ M = [
  (WA, "el workflow de Android publica sin que lo pidas", "if: ${{ inputs.publish_release }}", "if: ${{ true }}", "update"),
  (WA, "la Release de Android no es «latest»", '--repo "$GITHUB_REPOSITORY" --latest \\\n            --title "Bitty build $RUN_NUMBER (APK de prueba)"', '--repo "$GITHUB_REPOSITORY" \\\n            --title "Bitty build $RUN_NUMBER (APK de prueba)"', "update"),
  (WA, "el versionCode deja de ser el número de ejecución", "BITTY_VERSION_CODE: ${{ github.run_number }}", "BITTY_VERSION_CODE: 1", "update"),
+ (GR, "se vuelve a la sintaxis de versionCode que rompió la compilación", 'versionCode bittyVersionCode', 'versionCode (System.getenv("BITTY_VERSION_CODE") ?: "1").toInteger()', "update"),
  (H, "falta el icono de iPhone", '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">', '', "pwa"),
 ]
 bad = 0

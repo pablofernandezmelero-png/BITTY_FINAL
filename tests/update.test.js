@@ -146,7 +146,10 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
   }
   ok(/gh release create "build-\$RUN_NUMBER" Bitty\.apk[\s\S]*--latest/.test(wf("android.yml")) && /gh release create "build-\$RUN_NUMBER" Bitty\.apk[\s\S]*--latest/.test(wf("android-release.yml")), "las APK se publican como Release build-N marcada «latest» con el archivo Bitty.apk");
   ok(/BITTY_VERSION_CODE: \$\{\{ github\.run_number \}\}/.test(wf("android.yml")) && /BITTY_VERSION_CODE: \$\{\{ github\.run_number \}\}/.test(wf("android-release.yml")), "versionCode = número de ejecución (el mismo N que la etiqueta build-N)");
-  ok(/versionCode \(System\.getenv\("BITTY_VERSION_CODE"\) \?: "1"\)\.toInteger\(\)/.test(fs.readFileSync(path.join(root, "android", "app", "build.gradle"), "utf8")), "gradle lee BITTY_VERSION_CODE");
+  const gradle = fs.readFileSync(path.join(root, "android", "app", "build.gradle"), "utf8");
+  ok(/^def bittyVersionCode = Integer\.parseInt\(System\.getenv\("BITTY_VERSION_CODE"\) \?: "1"\)$/m.test(gradle) && /^\s+versionCode bittyVersionCode$/m.test(gradle), "gradle lee BITTY_VERSION_CODE con una variable simple (la forma anterior rompía la compilación)");
+  ok(!/versionCode \(/.test(gradle), "gradle: sin la sintaxis ambigua «versionCode (…)» que rompió el workflow");
+  ok(/^def bittyVersionCode/m.test(gradle) && gradle.indexOf("def bittyVersionCode") < gradle.indexOf("android {"), "gradle: la variable se define antes del bloque android");
   ok(/desktop-latest[\s\S]*--latest=false[\s\S]*--clobber/.test(wf("desktop-windows.yml")) && /Bitty-Setup\.exe/.test(wf("desktop-windows.yml")), "el instalador de Windows se publica en desktop-latest sin quitar «latest» a la APK");
   ok(/\bgh release create\b/.test(wf("android.yml")) && !/gh release (delete|edit)/.test(wf("android.yml") + wf("android-release.yml") + wf("desktop-windows.yml")), "los workflows nunca borran ni editan Releases ajenas");
   ok(/paths:[\s\S]*www\/\*\*/.test(wf("pages.yml")), "la página /descargar/ se publica sola con www/**");

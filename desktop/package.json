@@ -1,0 +1,60 @@
+{
+  "name": "bitty-desktop",
+  "version": "1.0.0",
+  "description": "Bitty - aplicación educativa de informática (escritorio)",
+  "author": "Bitty",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "prestart": "node scripts/copy-web.js",
+    "start": "electron .",
+    "predist": "node scripts/copy-web.js",
+    "dist": "electron-builder --win nsis",
+    "smoke": "node scripts/smoke.js"
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.bitty.desktop",
+    "productName": "Bitty",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "security.js",
+      "package.json",
+      "www/**/*"
+    ],
+    "protocols": [
+      {
+        "name": "Bitty",
+        "schemes": [
+          "bitty"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Bitty-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Bitty"
+    }
+  }
+}

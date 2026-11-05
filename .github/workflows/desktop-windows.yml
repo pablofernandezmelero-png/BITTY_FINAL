@@ -1,0 +1,63 @@
+name: Build Bitty Desktop (Windows)
+
+# Se ejecuta a mano: GitHub -> Actions -> "Build Bitty Desktop (Windows)" -> Run workflow.
+# Genera el instalador de Windows (NSIS, sin firmar) a partir de la web actual (www/), tras comprobar la seguridad
+# y arrancar la app de verdad con Electron (comprobación automática con la ventana oculta).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+
+      - name: Instalar dependencias de la web y ejecutar sus pruebas de escritorio
+        run: |
+          npm ci
+          node tests/static.test.js
+          node tests/desktop.test.js
+
+      - name: Instalar dependencias de escritorio (Electron, electron-builder)
+        working-directory: desktop
+        run: npm ci
+
+      - name: Comprobar la app con Electron real (ventana oculta)
+        working-directory: desktop
+        run: npm run smoke
+
+      - name: Generar el instalador
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run dist
+
+      - name: Comprobar que existe el instalador
+        shell: bash
+        run: test -f desktop/dist/Bitty-Setup-1.0.0.exe
+
+      - name: Subir el instalador como Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bitty-Windows-Installer
+          path: desktop/dist/Bitty-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 30

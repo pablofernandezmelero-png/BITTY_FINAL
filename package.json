@@ -4,7 +4,7 @@
   "private": true,
   "description": "Bitty: aprende informatica jugando",
   "scripts": {
-    "test": "node tests/static.test.js && node tests/questions.test.js && node tests/bank.test.js && node tests/flow.test.js && node tests/cloud.test.js && node tests/confirm.test.js && node tests/robustness.test.js && node tests/monkey.test.js && node tests/sql.test.js && node tests/migrations.test.js && node tests/content.test.js && node tests/android.test.js",
+    "test": "node tests/static.test.js && node tests/questions.test.js && node tests/bank.test.js && node tests/flow.test.js && node tests/cloud.test.js && node tests/confirm.test.js && node tests/robustness.test.js && node tests/monkey.test.js && node tests/sql.test.js && node tests/migrations.test.js && node tests/content.test.js && node tests/android.test.js && node tests/desktop.test.js",
     "sync": "cap sync android",
     "android:debug": "cap sync android && cd android && gradlew assembleDebug"
   },

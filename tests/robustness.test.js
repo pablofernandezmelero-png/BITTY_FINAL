@@ -166,6 +166,20 @@ const GOOD = (o = {}) => JSON.stringify(Object.assign({ v: 2, name: "Ana", track
   ok(nodes.some(e => /completado/.test(e.getAttribute("aria-label"))) && nodes.some(e => /bloqueado/.test(e.getAttribute("aria-label"))) && nodes.some(e => /siguiente nivel/.test(e.getAttribute("aria-label"))), "…e indican si están completados, bloqueados o son el siguiente");
   ok(b.w.document.querySelector("button.snd") && b.w.document.querySelector("button.snd").getAttribute("aria-label") === "Sonido", "el botón de sonido tiene nombre");
 
+  // 15) app de escritorio: enlace profundo bitty://confirmed por el puente del preload
+  let deepCb = null;
+  b = await boot({ store: {}, wrap: w => { w.bittyDesktop = { isDesktop: true, onDeepLink(cb) { deepCb = cb; } }; } });
+  ok(typeof deepCb === "function" && !!b.w.document.querySelector("#cE"), "la app registra su manejador en bittyDesktop.onDeepLink y muestra el acceso");
+  deepCb("bitty://confirmed"); await sleep(30);
+  ok(/¡Correo confirmado! Ya puedes iniciar sesión/.test(b.T()) && !!b.w.document.querySelector("#cE") && b.ev("AU") === null, "bitty://confirmed muestra «¡Correo confirmado!» y deja iniciar sesión (sin iniciarla)");
+  for (const bad of ["bitty://confirmed?token_hash=abc", "bitty://confirmed#access_token=x", "bitty://otra", "https://confirmed", "javascript:alert(1)", ""]) {
+    b.ev(`AS=1;cmsg="";wl()`); deepCb(bad); await sleep(20);
+    ok(!/Correo confirmado/.test(b.T()) && b.ev("AU") === null, `enlace de escritorio no admitido ignorado: «${bad}»`);
+  }
+  b = await boot({ store: { bitty: GOOD(), bitty_guest: "1" }, wrap: w => { w.bittyDesktop = { isDesktop: true, onDeepLink(cb) { deepCb = cb; } }; } });
+  b.ev("go(0)"); deepCb("bitty://confirmed"); await sleep(30);
+  ok(!!b.w.document.querySelector('[onclick="xq()"]') && b.errs.length === 0, "con una partida en curso, el enlace no interrumpe (solo un aviso)");
+
   console.log(`robustness.test: ${n - fails}/${n} comprobaciones correctas`);
   process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

@@ -1506,9 +1506,11 @@ function bback(){
  return false}
 function bexit(){const n=Date.now();if(n-bexT<2000){bexT=0;try{Capacitor.Plugins.App.exitApp()}catch(e){}return}bexT=n;btoast(tt("Pulsa otra vez para salir","Press back again to exit","Druk nogmaals op terug om te sluiten"))}
 try{const A=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.App;if(A&&A.addListener){A.addListener("backButton",()=>{if(!bback())bexit()});A.addListener("appUrlOpen",e=>onDeep(e&&e.url))}}catch(e){}
-// Enlace profundo desde la página de confirmación («Volver a Bitty»): solo com.bitty.app://confirmed, sin parámetros.
+// App de escritorio (Electron): el preload expone bittyDesktop.onDeepLink para bitty://confirmed.
+try{if(window.bittyDesktop&&typeof window.bittyDesktop.onDeepLink=="function")window.bittyDesktop.onDeepLink(onDeep)}catch(e){}
+// Enlace profundo desde la página de confirmación («Volver a Bitty»): solo com.bitty.app://confirmed (Android) o bitty://confirmed (escritorio), sin parámetros.
 // No acepta tokens ni inicia sesión: únicamente muestra el aviso y deja al usuario en el inicio de sesión.
-function onDeep(u){try{const x=new URL(String(u));if(x.protocol!=="com.bitty.app:"||x.hostname!=="confirmed"||x.search||x.hash)return;
+function onDeep(u){try{const x=new URL(String(u));if((x.protocol!=="com.bitty.app:"&&x.protocol!=="bitty:")||x.hostname!=="confirmed"||x.search||x.hash)return;
  const m=tt("¡Correo confirmado! Ya puedes iniciar sesión.","Email confirmed! You can now sign in.","E-mail bevestigd! Je kunt nu inloggen.");
  if(AS&&!AU){amode="i";cmsg=m;wl()}else btoast(m)}catch(e){}}
 function offUI(){let e=$("#offb");const off=navigator.onLine===false;if(!e){if(!off)return;e=document.createElement("div");e.id="offb";e.style.cssText="position:fixed;top:0;left:0;right:0;background:#b45309;color:#fff;text-align:center;font-size:13px;padding:4px 8px;z-index:99;pointer-events:none";document.body.appendChild(e)}

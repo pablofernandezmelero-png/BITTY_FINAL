@@ -5,9 +5,14 @@ name: Build Bitty Desktop (Windows)
 # y arrancar la app de verdad con Electron (comprobación automática con la ventana oculta).
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publicar el instalador en la Release publica 'desktop-latest' (la pagina /descargar/ lo ofrecera)"
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: desktop-${{ github.ref }}
@@ -61,3 +66,13 @@ jobs:
           path: desktop/dist/Bitty-Setup-*.exe
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publicar el instalador en la Release desktop-latest (solo si lo pediste)
+        if: ${{ inputs.publish_release }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp desktop/dist/Bitty-Setup-*.exe Bitty-Setup.exe
+          gh release view desktop-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create desktop-latest --repo "$GITHUB_REPOSITORY" --latest=false --title "Bitty para Windows (ultimo instalador)" --notes "Ultimo instalador de Windows de Bitty (sin firmar). Se reemplaza en cada publicacion."
+          gh release upload desktop-latest Bitty-Setup.exe --repo "$GITHUB_REPOSITORY" --clobber

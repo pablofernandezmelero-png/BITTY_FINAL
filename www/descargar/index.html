@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#6d4aff">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<title>Descargar Bitty</title>
+<style>
+:root{--bg:#f4f3ff;--fg:#241b5c;--mut:#665f92;--card:#fff;--line:#e3e0f5;--pri:#6d4aff;--pri2:#ff4d8d;--bad:#c02d2d}
+@media(prefers-color-scheme:dark){:root{--bg:#140e2a;--fg:#f5f0ff;--mut:#a79bd0;--card:#221a44;--line:#3a2d6b;--bad:#fca5a5}}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:600 16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:max(20px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));background-image:radial-gradient(60vmax 60vmax at -10% -10%,rgba(109,74,255,.22),transparent 60%),radial-gradient(55vmax 55vmax at 110% 30%,rgba(255,77,141,.18),transparent 60%)}
+main{max-width:520px;margin:0 auto}
+header{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+header img{width:56px;height:56px;border-radius:14px}
+h1{margin:0;font-size:26px}
+.sub{color:var(--mut);margin:0 0 14px}
+.lang{display:flex;gap:6px;margin:0 0 14px}
+.lang button{font:inherit;font-weight:700;font-size:13px;border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:5px 10px;cursor:pointer}
+.lang button[aria-pressed=true]{border-color:var(--pri);color:var(--pri)}
+.card{background:var(--card);border:2px solid var(--line);border-bottom-width:5px;border-radius:22px;padding:18px;margin:0 0 14px}
+.card h2{margin:0 0 4px;font-size:19px}
+.card p{margin:0 0 10px;color:var(--mut);font-size:15px}
+.btn{display:block;text-align:center;text-decoration:none;font:inherit;font-weight:800;color:#fff;background:linear-gradient(135deg,#6d4aff,#ff4d8d);border:0;border-radius:16px;padding:13px 16px;box-shadow:0 4px 0 rgba(0,0,0,.25);cursor:pointer;width:100%}
+.btn.sec{background:var(--card);color:var(--pri);border:2px solid var(--pri);box-shadow:none}
+.meta{font-size:13px;color:var(--mut);margin-top:8px}
+.err{color:var(--bad)}
+ol{margin:0 0 6px;padding-left:20px;color:var(--mut);font-size:15px}
+a:focus-visible,button:focus-visible{outline:3px solid var(--pri2);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+<header><img src="../icons/icon-192.png" alt="" width="56" height="56"><h1 id="h1"></h1></header>
+<p class="sub" id="sub"></p>
+<div class="lang" role="group" aria-label="Idioma / Language / Taal"><button data-l="es">Español</button><button data-l="en">English</button><button data-l="nl">Nederlands</button></div>
+
+<section class="card" id="cA" aria-live="polite"><h2 id="tA"></h2><p id="dA"></p><div id="bA"></div><div class="meta" id="mA"></div></section>
+<section class="card" id="cW" aria-live="polite"><h2 id="tW"></h2><p id="dW"></p><div id="bW"></div><div class="meta" id="mW"></div></section>
+<section class="card"><h2 id="tI"></h2><p id="dI"></p><ol id="oI"></ol><a class="btn sec" id="bI" href="../"></a></section>
+<section class="card"><h2 id="tB"></h2><p id="dB"></p><a class="btn sec" id="bB" href="../"></a></section>
+<p class="meta" id="nt"></p>
+</main>
+<script>
+"use strict";
+// Página pública y gratuita (GitHub Pages + Releases, 24/7): ofrece SIEMPRE la última versión publicada.
+// Los enlaces de descarga solo se aceptan si apuntan a las Releases de este repositorio; no se descarga nada solo.
+var REPO="pablofernandezmelero-png/BITTY_FINAL",API="https://api.github.com/repos/"+REPO+"/releases/",OK="https://github.com/"+REPO+"/releases/download/";
+var L={
+ es:{t:"Descargar Bitty",s:"Siempre la última versión.",ta:"Android",da:"APK para instalar en tu móvil. Android te pedirá permiso para instalar apps de fuera de la tienda.",tw:"Windows",dw:"Instalador de escritorio (no está firmado: Windows SmartScreen puede avisar; pulsa «Más información» → «Ejecutar de todas formas»).",ti:"iPhone / iPad",di:"Se instala desde Safari, sin App Store:",oi:["Abre Bitty en Safari.","Pulsa Compartir (cuadrado con flecha).","Elige «Añadir a pantalla de inicio»."],bi:"Abrir Bitty en Safari",tb:"En el navegador",db:"Sin instalar nada, en cualquier dispositivo.",bb:"Abrir Bitty",dl:"Descargar",ver:"Versión",load:"Buscando la última versión…",none:"Todavía no hay una versión publicada.",fail:"No se pudo consultar la última versión. Inténtalo de nuevo más tarde.",retry:"Reintentar",nt:"Si ya tienes la app instalada, ella misma te avisará cuando haya una versión nueva."},
+ en:{t:"Download Bitty",s:"Always the latest version.",ta:"Android",da:"APK to install on your phone. Android will ask permission to install apps from outside the store.",tw:"Windows",dw:"Desktop installer (not signed: Windows SmartScreen may warn; choose “More info” → “Run anyway”).",ti:"iPhone / iPad",di:"Installs from Safari, no App Store:",oi:["Open Bitty in Safari.","Tap Share (square with arrow).","Choose “Add to Home Screen”."],bi:"Open Bitty in Safari",tb:"In the browser",db:"Nothing to install, on any device.",bb:"Open Bitty",dl:"Download",ver:"Version",load:"Looking for the latest version…",none:"No version has been published yet.",fail:"Could not check the latest version. Try again later.",retry:"Try again",nt:"If the app is already installed, it will tell you when there is a new version."},
+ nl:{t:"Bitty downloaden",s:"Altijd de nieuwste versie.",ta:"Android",da:"APK om op je telefoon te installeren. Android vraagt toestemming om apps van buiten de winkel te installeren.",tw:"Windows",dw:"Installatieprogramma voor de computer (niet ondertekend: Windows SmartScreen kan waarschuwen; kies “Meer info” → “Toch uitvoeren”).",ti:"iPhone / iPad",di:"Installeren vanuit Safari, zonder App Store:",oi:["Open Bitty in Safari.","Tik op Delen (vierkant met pijl).","Kies “Zet op beginscherm”."],bi:"Bitty openen in Safari",tb:"In de browser",db:"Niets installeren, op elk apparaat.",bb:"Bitty openen",dl:"Downloaden",ver:"Versie",load:"De nieuwste versie zoeken…",none:"Er is nog geen versie gepubliceerd.",fail:"De nieuwste versie kon niet worden opgevraagd. Probeer het later opnieuw.",retry:"Opnieuw proberen",nt:"Als de app al is geïnstalleerd, meldt ze zelf wanneer er een nieuwe versie is."}
+};
+var lang="es";try{var nl=(navigator.language||"es").slice(0,2).toLowerCase();if(L[nl])lang=nl;var sv=localStorage.getItem("bitty_dl_lang");if(L[sv])lang=sv}catch(e){}
+var $=function(s){return document.querySelector(s)},state={A:null,W:null};
+function asset(rel,name){
+ if(!rel||rel.draft||rel.prerelease)return null;
+ var a=(rel.assets||[]).filter(function(x){return x&&x.name===name&&typeof x.browser_download_url==="string"&&x.browser_download_url.indexOf(OK)===0&&x.browser_download_url.indexOf("..")<0})[0];
+ return a?{url:a.browser_download_url,size:a.size,date:rel.published_at,tag:String(rel.tag_name||"")}:null}
+async function get(path){var c=new AbortController(),t=setTimeout(function(){c.abort()},10000);
+ try{var r=await fetch(API+path,{headers:{Accept:"application/vnd.github+json"},credentials:"omit",referrerPolicy:"no-referrer",signal:c.signal});
+  if(r.status===404)return{none:true};if(!r.ok)throw new Error("http "+r.status);return{rel:await r.json()}}finally{clearTimeout(t)}}
+function card(k,name,load){
+ var t=L[lang],b=$("#b"+k),m=$("#m"+k);b.textContent="";m.textContent="";m.className="meta";
+ var s=state[k];
+ if(s==="load"){m.textContent=t.load;return}
+ if(s==="fail"){m.className="meta err";m.textContent=t.fail;var rb=document.createElement("button");rb.className="btn sec";rb.id="r"+k;rb.textContent=t.retry;rb.onclick=function(){load()};b.appendChild(rb);return}
+ if(!s||s==="none"){m.textContent=t.none;return}
+ var a=document.createElement("a");a.className="btn";a.id="a"+k;a.href=s.url;a.rel="noopener noreferrer";a.textContent=t.dl+" "+name;b.appendChild(a);
+ var mb=s.size?" · "+(s.size/1048576).toFixed(1)+" MB":"",d=s.date?" · "+String(s.date).slice(0,10):"";
+ m.textContent=(/^build-\d+$/.test(s.tag)?t.ver+" "+s.tag.slice(6):t.ver+" "+(d?d.slice(3):"—"))+mb+(/^build-\d+$/.test(s.tag)?d:"")}
+function render(){var t=L[lang];document.documentElement.lang=lang;document.title=t.t;
+ $("#h1").textContent=t.t;$("#sub").textContent=t.s;$("#tA").textContent=t.ta;$("#dA").textContent=t.da;$("#tW").textContent=t.tw;$("#dW").textContent=t.dw;
+ $("#tI").textContent=t.ti;$("#dI").textContent=t.di;$("#bI").textContent=t.bi;$("#tB").textContent=t.tb;$("#dB").textContent=t.db;$("#bB").textContent=t.bb;$("#nt").textContent=t.nt;
+ var o=$("#oI");o.textContent="";t.oi.forEach(function(x){var li=document.createElement("li");li.textContent=x;o.appendChild(li)});
+ document.querySelectorAll(".lang button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.l===lang))});
+ card("A","APK",loadA);card("W","Windows",loadW)}
+async function loadA(){state.A="load";render();try{var r=await get("latest");state.A=r.none?"none":(asset(r.rel,"Bitty.apk")||"none")}catch(e){state.A="fail"}render()}
+async function loadW(){state.W="load";render();try{var r=await get("tags/desktop-latest");state.W=r.none?"none":(asset(r.rel,"Bitty-Setup.exe")||"none")}catch(e){state.W="fail"}render()}
+document.querySelectorAll(".lang button").forEach(function(b){b.onclick=function(){lang=b.dataset.l;try{localStorage.setItem("bitty_dl_lang",lang)}catch(e){}render()}});
+render();loadA();loadW();
+</script>
+</body>
+</html>

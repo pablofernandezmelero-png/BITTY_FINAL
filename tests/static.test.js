@@ -59,7 +59,7 @@ ok(handlers.size > 25 && missing.length === 0, `botones y campos: ${handlers.siz
 // 4) la política de seguridad de contenido sigue siendo restrictiva
 const csp = (html.match(/Content-Security-Policy" content="([^"]*)"/) || [])[1] || "";
 ok(/default-src 'none'/.test(csp) && /object-src 'none'/.test(csp) && /base-uri 'none'/.test(csp) && /form-action 'none'/.test(csp), "CSP restrictiva (default-src/object-src/base-uri/form-action 'none')");
-ok(/connect-src https:\/\/\*\.supabase\.co(;|$)/.test(csp) && !/connect-src[^;]*\*[^.]/.test(csp.replace(/https:\/\/\*\.supabase\.co/, "")), "connect-src limitado a Supabase");
+ok(/connect-src https:\/\/\*\.supabase\.co https:\/\/api\.github\.com(;|$)/.test(csp) && !/connect-src[^;]*\*[^.]/.test(csp.replace(/https:\/\/\*\.supabase\.co/, "")), "connect-src limitado a Supabase y a la API pública de GitHub (aviso de actualización)");
 ok(!/script-src[^;]*(https?:|\*)/.test(csp), "script-src sin orígenes externos");
 
 // 5) la clave del cliente es la pública, nunca una secreta

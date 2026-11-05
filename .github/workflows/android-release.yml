@@ -13,9 +13,14 @@ name: Build Android Release (firmado)
 # El keystore y las contrasenas NUNCA se suben al repositorio.
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publicar la APK firmada en una Release publica (la pagina /descargar/ y el aviso de la app la ofreceran)"
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-release-${{ github.ref }}
@@ -68,6 +73,7 @@ jobs:
       - name: Compilar AAB y APK de release firmados
         working-directory: android
         env:
+          BITTY_VERSION_CODE: ${{ github.run_number }}
           BITTY_KEYSTORE_PASSWORD: ${{ secrets.BITTY_KEYSTORE_PASSWORD }}
           BITTY_KEY_ALIAS: ${{ secrets.BITTY_KEY_ALIAS }}
           BITTY_KEY_PASSWORD: ${{ secrets.BITTY_KEY_PASSWORD }}
@@ -91,3 +97,14 @@ jobs:
             android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publicar la APK firmada en una Release publica (solo si lo pediste)
+        if: ${{ inputs.publish_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk Bitty.apk
+          gh release create "build-$RUN_NUMBER" Bitty.apk --repo "$GITHUB_REPOSITORY" --latest \
+            --title "Bitty build $RUN_NUMBER" \
+            --notes "APK de Bitty firmada, compilacion $RUN_NUMBER, commit $GITHUB_SHA."

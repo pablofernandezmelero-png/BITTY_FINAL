@@ -75,7 +75,8 @@ El código de todas las fases está escrito y probado en local; **lo único comp
 5. **Crear una cuenta real** y seguir «Cómo probarla» de `PAGINA_CONFIRMACION.md`; decirme el resultado.
 6. Lanzar **Build Bitty Desktop (Windows)** y probar el instalador (`COMPILACION_ESCRITORIO.md`).
 7. Decidir: **dominio propio** (¿sí/no?), **público objetivo** (si hay menores), `applicationId` definitivo.
-8. **iPhone:** abre la web en Safari → Compartir → «Añadir a pantalla de inicio» y sigue la lista de `IPHONE.md` (no se ha podido probar en un iPhone real).
+8. **Publicar la última versión:** lanza el workflow con `publish_release` y comprueba la página `/descargar/` (ver `ACTUALIZACIONES.md`; la APK de depuración no se actualiza encima de otra: desinstala la anterior).
+8b. **iPhone:** abre la web en Safari → Compartir → «Añadir a pantalla de inicio» y sigue la lista de `IPHONE.md` (no se ha podido probar en un iPhone real).
 9. Para publicar: política de privacidad, cuentas de AdMob y Play Console, keystore y secretos, y autorizar el autoalojado de las fuentes (los iconos ya están hechos).
 
 ## Lo que no se puede afirmar todavía

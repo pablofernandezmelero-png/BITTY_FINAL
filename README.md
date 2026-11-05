@@ -22,6 +22,7 @@ App educativa de informática (español, inglés y neerlandés). Una sola págin
 | [`CHECKLIST_LANZAMIENTO.md`](CHECKLIST_LANZAMIENTO.md) | **Checklist final**: estado de cada fase del plan maestro y acciones que necesito de ti |
 | [`PAGINA_CONFIRMACION.md`](PAGINA_CONFIRMACION.md) | Página pública `/auth/confirm/`, plantilla del correo, URLs de Supabase, alojamiento y dominio |
 | [`COMPILACION_ESCRITORIO.md`](COMPILACION_ESCRITORIO.md) | App de Windows (Electron): seguridad, compilación e instalador |
+| [`ACTUALIZACIONES.md`](ACTUALIZACIONES.md) | Página pública de descargas (/descargar/), aviso de actualización en la app y publicación de Releases |
 | [`IPHONE.md`](IPHONE.md) | Bitty en iPhone como PWA instalable: instalación, limitaciones, pruebas y camino nativo |
 
 ## Estructura

@@ -7,7 +7,9 @@ android {
         applicationId "com.bitty.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // versionCode lo pone GitHub Actions (numero de ejecucion) para que cada compilacion sea mas nueva que la anterior;
+        // la app lo compara con la ultima publicada (aviso de actualizacion). Sin la variable: 1.
+        versionCode (System.getenv("BITTY_VERSION_CODE") ?: "1").toInteger()
         versionName "1.0"
         // ID de aplicacion de AdMob. Sin la variable, se usa el ID de PRUEBA oficial de Google.
         resValue "string", "admob_app_id", System.getenv("BITTY_ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713"

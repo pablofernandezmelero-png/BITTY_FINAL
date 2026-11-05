@@ -2,11 +2,21 @@ name: Build Android APK
 
 # Se ejecuta a mano: GitHub -> Actions -> "Build Android APK" -> Run workflow.
 # Al terminar, la APK de depuracion se descarga desde "Artifacts".
+#
+# Si marcas "publish_release", ademas publica la APK en una Release publica de GitHub (etiqueta build-N) y la pagina
+# /descargar/ y el aviso de actualizacion de la app la ofreceran como ultima version. Por defecto NO publica nada.
+# OJO: la APK de depuracion se firma con una clave que GitHub genera distinta en cada ejecucion: Android no deja
+# actualizar encima de una APK anterior (hay que desinstalar la vieja). Para actualizar encima usa "Build Android Release (firmado)".
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publicar la APK en una Release publica (la pagina /descargar/ y el aviso de la app la ofreceran)"
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-${{ github.ref }}
@@ -43,6 +53,8 @@ jobs:
 
       - name: Compilar APK de depuracion
         working-directory: android
+        env:
+          BITTY_VERSION_CODE: ${{ github.run_number }}
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace --no-daemon
@@ -57,3 +69,14 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publicar la APK en una Release publica (solo si lo pediste)
+        if: ${{ inputs.publish_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk Bitty.apk
+          gh release create "build-$RUN_NUMBER" Bitty.apk --repo "$GITHUB_REPOSITORY" --latest \
+            --title "Bitty build $RUN_NUMBER (APK de prueba)" \
+            --notes "APK de depuracion de Bitty, compilacion $RUN_NUMBER, commit $GITHUB_SHA. Firmada con clave de depuracion: para actualizar encima de otra compilacion, desinstala la anterior."

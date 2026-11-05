@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#6d4aff"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src data: blob:; connect-src https://*.supabase.co; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="no-referrer"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Bitty"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="format-detection" content="telephone=no"><title>Bitty</title>
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#6d4aff"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src data: blob:; connect-src https://*.supabase.co https://api.github.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="referrer" content="no-referrer"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Bitty"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="format-detection" content="telephone=no"><title>Bitty</title>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f6f1ff;--fg:#2a1f4d;--mut:#7a6fa0;--card:#fff;--line:#e4dcf8;--pri:#8b5cf6;--pri2:#ec4899;--ok:#22c55e;--okb:#d1fae5;--bad:#ef4444;--badb:#fee2e2;--gold:#fbbf24;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -1523,6 +1523,40 @@ function onDeep(u){try{const x=new URL(String(u));if((x.protocol!=="com.bitty.ap
 function offUI(){let e=$("#offb");const off=navigator.onLine===false;if(!e){if(!off)return;e=document.createElement("div");e.id="offb";e.style.cssText="position:fixed;top:0;left:0;right:0;background:#b45309;color:#fff;text-align:center;font-size:13px;padding:4px 8px;z-index:99;pointer-events:none";document.body.appendChild(e)}
  e.textContent=tt("Sin conexión: tu progreso se guarda en el dispositivo y se sincronizará al volver.","Offline: your progress is saved on this device and will sync when you're back online.","Offline: je voortgang wordt op dit apparaat bewaard en gesynchroniseerd zodra je weer online bent.");e.style.display=off?"block":"none"}
 addEventListener("offline",offUI);addEventListener("online",()=>{offUI();if(AU&&SBon())cpush()});offUI();
+// ---- Avisos de actualización: APK nueva (Android) y versión nueva de la web (PWA). Nunca instala ni recarga solo: solo avisa.
+// La última APK la publica GitHub Actions como Release «build-N» (N = versionCode). El enlace es una constante: nada de lo que
+// devuelve la API decide a dónde se va.
+const UPD={api:"https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/latest",page:"https://pablofernandezmelero-png.github.io/BITTY_FINAL/descargar/",every:12*36e5};
+function updBar(msg,okTxt,okFn,okHref,laterFn){
+ const old=$("#upd");if(old)old.remove();
+ const e=document.createElement("div");e.id="upd";e.setAttribute("role","status");
+ e.style.cssText="position:fixed;left:12px;right:12px;bottom:84px;max-width:496px;margin:0 auto;background:#2a1f4d;color:#fff;border-radius:16px;padding:12px 14px;z-index:98;box-shadow:0 6px 20px rgba(0,0,0,.4);font-size:14px;line-height:1.35";
+ const t=document.createElement("div");t.textContent=msg;e.appendChild(t);
+ const r=document.createElement("div");r.style.cssText="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:10px";
+ const b=document.createElement("button");b.id="updLater";b.textContent=tt("Más tarde","Later","Later");b.style.cssText="background:none;border:0;color:#d9d0ff;font:inherit;font-weight:700;padding:8px 10px";
+ b.onclick=()=>{e.remove();if(laterFn)laterFn()};r.appendChild(b);
+ const o=document.createElement(okHref?"a":"button");o.id="updOk";o.textContent=okTxt;
+ o.style.cssText="background:linear-gradient(135deg,#6d4aff,#ff4d8d);border:0;color:#fff;font:inherit;font-weight:800;padding:9px 16px;border-radius:12px;text-decoration:none;cursor:pointer";
+ if(okHref){o.href=okHref;o.target="_blank";o.rel="noopener noreferrer"}else o.onclick=okFn;
+ r.appendChild(o);e.appendChild(r);document.body.appendChild(e);return e}
+async function updCheck(){
+ try{
+  const nat=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform(),A=nat&&Capacitor.Plugins&&Capacitor.Plugins.App;
+  if(!A||!A.getInfo||!navigator.onLine||adInLevel()||$("#upd"))return;
+  if(Date.now()-(+localStorage.getItem("bitty_upd_t")||0)<UPD.every)return;
+  const cur=parseInt((await A.getInfo()).build,10);if(!(cur>0))return;
+  const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);
+  const r=await fetch(UPD.api,{headers:{Accept:"application/vnd.github+json"},credentials:"omit",referrerPolicy:"no-referrer",signal:c.signal});clearTimeout(to);
+  if(!r.ok)return;
+  const j=await r.json(),m=/^build-(\d{1,6})$/.exec(String(j&&j.tag_name||""));
+  if(!m||j.draft||j.prerelease)return;
+  localStorage.setItem("bitty_upd_t",String(Date.now()));
+  const n=+m[1];if(n<=cur||localStorage.getItem("bitty_upd_skip")===String(n))return;
+  updBar(tt("Hay una versión nueva de Bitty. Descárgala e instálala para tener las últimas mejoras.","A new version of Bitty is available. Download and install it to get the latest improvements.","Er is een nieuwe versie van Bitty. Download en installeer die voor de nieuwste verbeteringen."),tt("Descargar","Download","Downloaden"),null,UPD.page,()=>{try{localStorage.setItem("bitty_upd_skip",String(n))}catch(e){}})
+ }catch(e){}}
+setTimeout(updCheck,4000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(updCheck,1500)});
+// Web/PWA: cuando el service worker nuevo toma el control, la pestaña sigue con el código viejo hasta recargar: se ofrece recargar (sin hacerlo solo, por si hay un nivel en curso).
+try{if("serviceWorker"in navigator&&navigator.serviceWorker.controller){navigator.serviceWorker.addEventListener("controllerchange",()=>{if($("#upd"))return;updBar(tt("Hay una versión nueva de Bitty.","A new version of Bitty is available.","Er is een nieuwe versie van Bitty."),tt("Actualizar","Update","Bijwerken"),()=>location.reload())})}}catch(e){}
 document.documentElement.lang=S.lang;
 AS?wl():S.track?home():welcome();
 </script></body></html>

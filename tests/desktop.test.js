@@ -58,5 +58,13 @@ ok(!JSON.stringify(pj).match(/"asar"\s*:\s*false/), "asar sin desactivar");
 ok(/node_modules/.test(fs.readFileSync(D(".gitignore"), "utf8")) && /dist/.test(fs.readFileSync(D(".gitignore"), "utf8")) && /www/.test(fs.readFileSync(D(".gitignore"), "utf8")), "desktop/.gitignore excluye node_modules, dist y la copia de www");
 ok(fs.existsSync(path.join(root, ".github", "workflows", "desktop-windows.yml")), "existe el workflow de compilación para Windows");
 
-console.log(`desktop.test: ${n - fails}/${n} comprobaciones correctas`);
+// ---- icono de Windows: .ico real (varios tamaños, imágenes PNG) y referenciado desde electron-builder
+const ico = fs.existsSync(D("build/icon.ico")) ? fs.readFileSync(D("build/icon.ico")) : Buffer.alloc(0);
+ok(ico.length > 6 && ico.readUInt16LE(0) === 0 && ico.readUInt16LE(2) === 1, "desktop/build/icon.ico es un icono válido");
+const icoN = ico.length > 6 ? ico.readUInt16LE(4) : 0, icoSizes = [];
+for (let i = 0; i < icoN; i++) { const o = 6 + 16 * i, w = ico[o] || 256, len = ico.readUInt32LE(o + 8), off = ico.readUInt32LE(o + 12); icoSizes.push(w); ok(off + len <= ico.length && ico.slice(off + 1, off + 4).toString() === "PNG", "entrada " + w + " del .ico contiene un PNG íntegro"); }
+ok([16, 32, 48, 256].every(s => icoSizes.includes(s)), "el .ico incluye 16, 32, 48 y 256 px (Windows lo necesita para barra de tareas, escritorio y tienda)");
+ok(pj.build.win.icon === "build/icon.ico" && pj.build.nsis.installerIcon === "build/icon.ico", "electron-builder usa el icono en el programa y en el instalador");
+
+console.log(`desktop.test:${n - fails}/${n} comprobaciones correctas`);
 process.exit(fails ? 1 : 0);

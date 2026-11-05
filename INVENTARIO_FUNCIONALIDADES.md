@@ -78,7 +78,8 @@ En ninguna fila hay prueba en **Android físico** ni contra **Supabase autentica
 | Aviso de falta de conexión | Implementada | Mock | |
 | Sin copias de seguridad / sin tráfico en claro | Implementada | Revisión del manifiesto | |
 | Enlaces de correo desde la APK | Implementada (corregida) | Mock | Usan la web publicada |
-| Iconos y pantalla de inicio propios | **Pendiente** | — | Son los de Capacitor |
+| Icono propio de Bitty (Android, Windows, PWA, tienda 512) | Hecho y verificado (tamaños reales y alfa en las pruebas) | `tools/make-icons.js`, `assets/brand/` | Falta la pantalla de inicio (*splash*) y las capturas de la ficha de Play |
+| **PWA instalable en iPhone** (manifiesto, service worker, iconos iOS) | Hecho; comprobado en Chromium real (registro, caché, abre sin servidor) | `IPHONE.md`, `tests/pwa.test.js` | **Sin probar en un iPhone real**; sin anuncios; app nativa iOS pendiente (Mac + Apple Developer) |
 
 ## 4b. Escritorio (Windows, Electron)
 
@@ -86,9 +87,9 @@ En ninguna fila hay prueba en **Android físico** ni contra **Supabase autentica
 |---|---|---|---|
 | App de escritorio con la web actual (`desktop/`) | Implementada | **Electron 45 real** (10/10), también empaquetada | Protocolo propio `app://bitty`, sin Node en la página |
 | Endurecimiento (aislamiento, sandbox, navegación, permisos) | Implementada | Electron real + 100 pruebas + 20 mutaciones | |
-| Instalador NSIS `Bitty-Setup-1.0.0.exe` | Generado (116 MB, sin firmar) | Compilación local | **Instalación sin probar**; icono por defecto |
+| Instalador NSIS `Bitty-Setup-1.0.0.exe` | Generado (116 MB, sin firmar) con el **icono de Bitty** (comprobado en el .exe y en el instalador) | Compilación local | **Instalación sin probar** |
 | Funciona sin conexión | Implementada | Sin probar con la red desconectada | La web es local |
-| Firma de código, icono propio, autoactualización | **Pendiente** | — | |
+| Firma de código, autoactualización | **Pendiente** | — | |
 
 ## 5. Publicidad (solo en Android)
 

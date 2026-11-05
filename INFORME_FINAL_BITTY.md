@@ -92,7 +92,8 @@ Guía: `CONFIGURACION_SUPABASE.md`.
 - **Compilada:** sí, en GitHub Actions (ejecución #3, commit `3d2d97e`), APK de depuración de 8,56 MB con los plugins de AdMob y App.
 - **Instalada y probada en un móvil:** **no** con esta versión. La APK que tienes instalada es anterior a todos estos cambios.
 - **APK de release firmada:** no generada (faltan keystore y secretos). **AAB:** no generado.
-- Icono y pantalla de inicio: los de Capacitor por defecto, pendientes de sustituir.
+- Icono propio de Bitty hecho (Android, Windows, PWA, 512 para Play). Pantalla de inicio (*splash*): la de Capacitor por defecto.
+- iPhone: PWA instalable (`IPHONE.md`); sin probar en iPhone real.
 - Guía y lista de pruebas en móvil: `COMPILACION_ANDROID.md`.
 
 ## F. Seguridad
@@ -128,7 +129,7 @@ Guía: `CONFIGURACION_SUPABASE.md`.
 
 ## H. Publicación (Google Play)
 
-Falta: cuenta de Play Console, keystore y secretos, decidir el `applicationId` definitivo, decidir el público objetivo (si incluye menores, aplica la política *Familias*), cuenta de AdMob con IDs reales, política de privacidad en una URL pública, formulario de seguridad de datos, icono y gráficos de la ficha, subir `versionCode`, pruebas en móvil. Detalle en `PUBLICACION_GOOGLE_PLAY.md`. **No se afirma que cumpla los requisitos de Google Play.**
+Falta: cuenta de Play Console, keystore y secretos, decidir el `applicationId` definitivo, decidir el público objetivo (si incluye menores, aplica la política *Familias*), cuenta de AdMob con IDs reales, política de privacidad en una URL pública, formulario de seguridad de datos, capturas y gráficos de la ficha, subir `versionCode`, pruebas en móvil. Detalle en `PUBLICACION_GOOGLE_PLAY.md`. **No se afirma que cumpla los requisitos de Google Play.**
 
 ## I. Acciones del propietario
 
@@ -137,7 +138,7 @@ Falta: cuenta de Play Console, keystore y secretos, decidir el `applicationId` d
 3. Supabase → Multi-Factor: activar TOTP.
 4. Crear una cuenta real de prueba y seguir los pasos de la sección 4 de `CONFIGURACION_SUPABASE.md`; decirme el resultado.
 5. Lanzar de nuevo **Build Android APK** tras mis siguientes cambios, instalar en el móvil y pasar la lista de `COMPILACION_ANDROID.md`.
-6. Para publicar: keystore y 4 secretos, cuenta de AdMob, cuenta de Play Console, política de privacidad, icono y decisión del público objetivo.
+6. Para publicar: keystore y 4 secretos, cuenta de AdMob, cuenta de Play Console, política de privacidad y decisión del público objetivo.
 7. Autorizar el siguiente `push` de los cambios locales.
 
 ## J. Veredicto

@@ -3,7 +3,7 @@
 #   python tools/mutation-app.py
 import subprocess, os, sys
 root = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-H = os.path.join(root, "www", "index.html"); MF = os.path.join(root, "android", "app", "src", "main", "AndroidManifest.xml")
+H = os.path.join(root, "www", "index.html"); MF = os.path.join(root, "android", "app", "src", "main", "AndroidManifest.xml"); SW = os.path.join(root, "www", "sw.js")
 M = [
  (H, "el registro deja de indicar la página de confirmación", 'k=="s"?"/auth/v1/signup"+RURLC():', 'k=="s"?"/auth/v1/signup":', "cloud"),
  (H, "el reenvío pierde la espera de 60 s", 'if(Date.now()-last<60000){cmsg=', 'if(false){cmsg=', "cloud"),
@@ -20,6 +20,15 @@ M = [
  (H, "«cerrar sesión en todos» no pide confirmación", 'if(g&&!confirm(', 'if(false&&!confirm(', "cloud"),
  (H, "«cerrar sesión en todos» solo revoca este dispositivo", '"/auth/v1/logout?scope="+(g?"global":"local")', '"/auth/v1/logout?scope=local"', "cloud"),
  (MF, "el filtro profundo acepta cualquier host", ' android:host="confirmed"', '', "android"),
+ (SW, "el service worker guarda URLs con token_hash", 'if (res && res.ok && res.type === "basic" && cacheable(url))', 'if (res && res.ok && res.type === "basic")', "pwa"),
+ (SW, "el service worker intercepta Supabase y otros orígenes", 'url.origin !== self.location.origin) return;', 'false) return;', "pwa"),
+ (SW, "el service worker guarda respuestas de error", 'res && res.ok && res.type', 'res && res.type', "pwa"),
+ (SW, "el service worker no borra las cachés antiguas", 'ks.filter(k => k !== CACHE)', 'ks.filter(k => false)', "pwa"),
+ (SW, "sin conexión la página de confirmación se sustituye por la app", '!url.pathname.includes("/auth/")', 'true', "pwa"),
+ (SW, "el service worker deja de funcionar sin conexión", 'const hit = await caches.match(req, { ignoreSearch: true });', 'const hit = null;', "pwa"),
+ (H, "el service worker se registra también en la app de Android", '!window.Capacitor&&!window.bittyDesktop&&', '!window.bittyDesktop&&', "pwa"),
+ (H, "la CSP deja de permitir el service worker", " worker-src 'self';", "", "pwa"),
+ (H, "falta el icono de iPhone", '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">', '', "pwa"),
 ]
 bad = 0
 for path, why, a, b, suite in M:

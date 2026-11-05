@@ -47,14 +47,17 @@
           ]
         }
       ],
-      "artifactName": "Bitty-Setup-${version}.${ext}"
+      "artifactName": "Bitty-Setup-${version}.${ext}",
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Bitty"
+      "shortcutName": "Bitty",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
     }
   }
 }

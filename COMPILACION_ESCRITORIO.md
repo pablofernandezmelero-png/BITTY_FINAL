@@ -10,11 +10,11 @@ Carpeta: `desktop/` (dentro del repositorio actual). Carga **la web actual** (`w
 |---|---|
 | Código de la app, seguridad y protocolo propio | Implementado y probado (`tests/desktop.test.js`: 100 comprobaciones; mutaciones: 20/20) |
 | Arranque con **Electron real 45.2.3** (ventana oculta): carga, aislamiento, navegación bloqueada, almacenamiento, modo invitado | **Comprobado** (`npm run smoke`, 10/10), sobre código fuente y sobre la app **empaquetada** (`win-unpacked`) |
-| Generación del instalador `Bitty-Setup-1.0.0.exe` (NSIS, 116 MB) | **Comprobado localmente**, desde una ruta corta; sin firmar y con el icono por defecto de Electron |
+| Generación del instalador `Bitty-Setup-1.0.0.exe` (NSIS, 116 MB) | **Comprobado localmente**, desde una ruta corta; sin firmar y con el **icono de Bitty** (extraído del .exe y del instalador para comprobarlo) |
 | Ejecutar el **instalador** (instalar, acceso directo, desinstalar) | **No probado**: instalaría software en tu equipo. Lo haces tú (ver más abajo) |
 | Workflow de GitHub `desktop-windows.yml` | Escrito y con YAML válido; **no ejecutado** (se lanza a mano tras subir el código) |
 | Modo sin conexión en escritorio | La web es local y funciona sin red; **no probado con el cable desconectado** en la app de escritorio |
-| Icono propio, firma de código (certificado) y autoactualización | **Pendiente** (no hay icono de Bitty ni certificado; sin `electron-updater`) |
+| Firma de código (certificado) y autoactualización | **Pendiente** (no hay certificado; sin `electron-updater`) |
 
 ## Cómo está endurecida
 
@@ -62,6 +62,6 @@ El plan menciona reinstalar Electron y extraer `electron.exe` a mano. Era un pro
 6. Desinstala desde *Configuración → Aplicaciones*.
 
 ## Pendiente
-- Icono de Bitty (`build.win.icon`, `.ico` de 256×256) y, si se publica fuera de GitHub, **certificado de firma de código** (sin él, SmartScreen avisará).
+- Si se publica fuera de GitHub, **certificado de firma de código** (sin él, SmartScreen avisará). El icono (`desktop/build/icon.ico`, 16–256 px) ya está hecho; se regenera con `tools/make-icons.js`.
 - Autoactualización (`electron-updater`): hoy cada versión nueva requiere un instalador nuevo.
 - El progreso de la app de escritorio **no se comparte** con el de la web ni con el de Android salvo iniciando sesión con la misma cuenta (cada plataforma guarda el suyo en local).

@@ -11,7 +11,8 @@
 | Permisos propios | solo `INTERNET` | El plugin de AdMob añade los suyos al fusionar el manifiesto (acceso a red y el ID de publicidad); revísalos en el manifiesto fusionado antes de publicar |
 | Copias de seguridad | desactivadas (`allowBackup=false` + reglas de extracción) | La sesión y el progreso local no salen del dispositivo |
 | Tráfico en claro | prohibido | |
-| Icono y pantalla de inicio | **Los de Capacitor por defecto** | Hay que sustituirlos por los de Bitty antes de publicar |
+| Icono | **El de Bitty** (robot, `tools/make-icons.js`) | Icono adaptable con fondo `#6D4AFF` y primer plano propio |
+| Pantalla de inicio (*splash*) | Los de Capacitor por defecto | Pendiente de sustituir |
 | Plugins | `@capacitor/app`, `@capacitor-community/admob` | |
 
 ## APK de depuración (para pruebas)

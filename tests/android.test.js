@@ -121,6 +121,14 @@ const back = () => cap.cb && cap.cb({ canGoBack: false });
   ok("manifiesto: un único filtro BROWSABLE, solo com.bitty.app://confirmed", browsable.length === 1 && /android:scheme="com\.bitty\.app"/.test(browsable[0]) && /android:host="confirmed"/.test(browsable[0]));
   ok("manifiesto: sin App Links https ni autoVerify (requieren un dominio propio con assetlinks.json)", !/android:scheme="https?"/.test(mf) && !/autoVerify/.test(mf));
   ok("manifiesto: solo la actividad principal está exportada", (mf.match(/android:exported="true"/g) || []).length === 1);
+  // iconos propios de Bitty (no los de Capacitor): dimensiones reales por densidad y fondo del icono adaptable
+  const fsx = require("fs"), pngWH = f => { const b = fsx.readFileSync(f); return b.slice(1, 4).toString() === "PNG" ? [b.readUInt32BE(16), b.readUInt32BE(20)] : null; };
+  const RES = "android/app/src/main/res/", DENS = { mdpi: [48, 108], hdpi: [72, 162], xhdpi: [96, 216], xxhdpi: [144, 324], xxxhdpi: [192, 432] };
+  for (const [d, [l, f]] of Object.entries(DENS)) {
+    const a = pngWH(RES + "mipmap-" + d + "/ic_launcher.png"), b = pngWH(RES + "mipmap-" + d + "/ic_launcher_round.png"), c = pngWH(RES + "mipmap-" + d + "/ic_launcher_foreground.png");
+    ok("icono " + d + ": ic_launcher " + l + "px, round " + l + "px y primer plano " + f + "px", !!a && !!b && !!c && a[0] === l && a[1] === l && b[0] === l && b[1] === l && c[0] === f && c[1] === f);
+  }
+  ok("fondo del icono adaptable = morado de Bitty", /#6D4AFF/i.test(fsx.readFileSync(RES + "values/ic_launcher_background.xml", "utf8")));
   console.log(out.join("\n")); console.log("ERRORES JS:", errs.length); errs.forEach(e => console.log(e));
   process.exit(out.some(x => x.startsWith("FALLO")) || errs.length ? 1 : 0);
 })();

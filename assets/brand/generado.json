@@ -1,0 +1,115 @@
+{
+ "archivos": 29,
+ "facts": {
+  "www/icons/icon-192.png": {
+   "size": 192,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "www/icons/icon-512.png": {
+   "size": 512,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "www/icons/icon-maskable-192.png": {
+   "size": 192,
+   "cornerAlpha": 255,
+   "centerAlpha": 255
+  },
+  "www/icons/icon-maskable-512.png": {
+   "size": 512,
+   "cornerAlpha": 255,
+   "centerAlpha": 255
+  },
+  "www/icons/apple-touch-icon.png": {
+   "size": 180,
+   "cornerAlpha": 255,
+   "centerAlpha": 255
+  },
+  "www/icons/favicon-32.png": {
+   "size": 32,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "store/play-icon-512.png": {
+   "size": 512,
+   "cornerAlpha": 255,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-mdpi/ic_launcher.png": {
+   "size": 48,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png": {
+   "size": 48,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png": {
+   "size": 108,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-hdpi/ic_launcher.png": {
+   "size": 72,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png": {
+   "size": 72,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png": {
+   "size": 162,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png": {
+   "size": 96,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png": {
+   "size": 96,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png": {
+   "size": 216,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png": {
+   "size": 144,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png": {
+   "size": 144,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png": {
+   "size": 324,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": {
+   "size": 192,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png": {
+   "size": 192,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  },
+  "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png": {
+   "size": 432,
+   "cornerAlpha": 0,
+   "centerAlpha": 255
+  }
+ }
+}

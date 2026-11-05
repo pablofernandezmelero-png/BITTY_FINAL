@@ -29,7 +29,7 @@
 5c. **Permisos fusionados**: el manifiesto propio solo declara `INTERNET`; el plugin de anuncios añade `ACCESS_NETWORK_STATE` y el SDK de Google añade los suyos (entre ellos el ID de publicidad). **No se pudo inspeccionar el manifiesto fusionado de la APK**: revísalo (`apkanalyzer manifest print app-debug.apk`) y declara cada permiso en la ficha.
 
 ### Material de la ficha
-6. **Icono** de 512×512 y los iconos de la app (hoy son los de Capacitor por defecto) y **pantalla de inicio** de Bitty.
+6. **Icono** de 512×512 (`store/play-icon-512.png`, ya generado) y los iconos de la app (ya son los de Bitty); falta la **pantalla de inicio** y las capturas.
 7. **Gráfico de funciones** (1024×500) y capturas de pantalla del móvil (sale de la APK real).
 8. Descripción corta y larga (es/en/nl si quieres las tres).
 9. **Política de privacidad publicada en una URL pública.** Debe describir al menos: correo y contraseña (gestionados por Supabase), progreso/XP/estadísticas, identificador de publicidad y datos de anuncios (Google AdMob), 2FA, retención y cómo borrar la cuenta, contacto del responsable. Redáctala con la información real del propietario; no se incluye una plantilla porque depende de tus datos y de la ley aplicable.
@@ -45,5 +45,5 @@
 
 ## Lo que NO se puede afirmar hoy
 
-- Que Bitty cumple todos los requisitos de Google Play: pendientes la política de privacidad, el borrado de cuenta, los datos de AdMob, el público objetivo, el icono y la prueba en dispositivo real.
+- Que Bitty cumple todos los requisitos de Google Play: pendientes la política de privacidad, el borrado de cuenta, los datos de AdMob, el público objetivo, las capturas de la ficha y la prueba en dispositivo real.
 - Que la app esté aprobada o publicable: no se ha enviado nada.

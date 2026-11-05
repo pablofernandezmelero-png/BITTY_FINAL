@@ -42,7 +42,7 @@ Nota actual: **61/100**. En las tablas, la columna «Aporta» indica cuántos pu
 | 15 | Decidir el `applicationId` definitivo **antes** de la primera subida | Propietario |
 | 16 | Escribir y publicar la **política de privacidad** (datos: correo, progreso, ID de publicidad, 2FA, retención, cómo borrar la cuenta) | Propietario (con mi borrador si quieres) |
 | 17 | Cuenta de **AdMob**: IDs reales (`ADS`, `BITTY_ADMOB_APP_ID`) | Propietario |
-| 18 | Iconos y pantalla de inicio propios (512×512 para la ficha) y capturas | Propietario |
+| 18 | ~~Iconos propios~~ (hechos). Pantalla de inicio y capturas para la ficha | Propietario |
 | 19 | Keystore + 4 *Secrets* → **Build Android Release (firmado)** → AAB | Propietario |
 | 20 | Cuenta de **Play Console** (25 USD), formulario de seguridad de datos, clasificación de contenido y pruebas internas | Propietario |
 

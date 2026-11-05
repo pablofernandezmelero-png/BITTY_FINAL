@@ -18,7 +18,7 @@ El código de todas las fases está escrito y probado en local; **lo único comp
 | **3 · Ciberseguridad** | Hecho en local | Ver tabla de seguridad abajo | Verificar RLS con 2 cuentas reales |
 | **4 · UX/UI** | Parcial | 6 pantallas + la página de confirmación revisadas en navegador real (claro/oscuro), accesibilidad corregida | Revisar Perfil, Especiales, retos y 2FA en pantalla; otros anchos; TalkBack |
 | **5 · Android** | Compila; sin probar en móvil | Compilación en GitHub (APK 8,56 MB, commit anterior); botón atrás, offline y anuncios con Capacitor simulado; **enlace profundo `com.bitty.app://confirmed`** | Compilar la APK nueva, instalarla y pasar la lista de `COMPILACION_ANDROID.md`; App Links y notificaciones (ver abajo) |
-| **6 · Escritorio (Electron)** | Hecho y comprobado con Electron real | App y app **empaquetada** arrancadas con Electron 45 (10/10); instalador NSIS de 116 MB generado; 100 pruebas + 20 mutaciones. Ver `COMPILACION_ESCRITORIO.md` | Probar el **instalador** en tu PC; icono propio y firma |
+| **6 · Escritorio (Electron)** | Hecho y comprobado con Electron real | App y app **empaquetada** arrancadas con Electron 45 (10/10); instalador NSIS de 116 MB generado con el icono de Bitty; 110 pruebas + 20 mutaciones. Ver `COMPILACION_ESCRITORIO.md` | Probar el **instalador** en tu PC; firma |
 | **7 · Offline y sincronización** | Hecho en local | Cola de XP persistente, reinicio con eventos pendientes, sin duplicados, servidor caído/sin red (41 + 70 pruebas) | Prueba real con dos dispositivos; escritorio desconectado |
 | **8 · Publicidad y privacidad** | Código listo con IDs de prueba | AdMob, consentimiento, límites, validación del bonus en servidor | Cuenta de AdMob; **política de privacidad**; autoalojar fuentes; borrado de cuenta (hecho en código, sin aplicar) |
 | **9 · Página de confirmación** | Implementada | 57 pruebas + 13 mutaciones; navegador real contra Supabase real (enlace inválido → «ya no es válido»); `PAGINA_CONFIRMACION.md` | Plantilla del correo y URLs en Supabase; **camino de éxito con correo real** |
@@ -75,7 +75,8 @@ El código de todas las fases está escrito y probado en local; **lo único comp
 5. **Crear una cuenta real** y seguir «Cómo probarla» de `PAGINA_CONFIRMACION.md`; decirme el resultado.
 6. Lanzar **Build Bitty Desktop (Windows)** y probar el instalador (`COMPILACION_ESCRITORIO.md`).
 7. Decidir: **dominio propio** (¿sí/no?), **público objetivo** (si hay menores), `applicationId` definitivo.
-8. Para publicar: política de privacidad, cuentas de AdMob y Play Console, keystore y secretos, iconos (Android y Windows) y autorizar el autoalojado de las fuentes.
+8. **iPhone:** abre la web en Safari → Compartir → «Añadir a pantalla de inicio» y sigue la lista de `IPHONE.md` (no se ha podido probar en un iPhone real).
+9. Para publicar: política de privacidad, cuentas de AdMob y Play Console, keystore y secretos, y autorizar el autoalojado de las fuentes (los iconos ya están hechos).
 
 ## Lo que no se puede afirmar todavía
 

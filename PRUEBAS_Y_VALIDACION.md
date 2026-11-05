@@ -30,7 +30,7 @@ Se ejecutan todas con `npm test` (y las ejecutan automáticamente los workflows 
 | `tests/desktop.test.js` | Local (Node, sin Electron) | 100/100 | Rutas hostiles contra `app://bitty`, navegación y enlaces externos, enlace profundo `bitty://confirmed`, configuración endurecida de `main.js`/`preload.js`/`package.json` |
 | `desktop/scripts/smoke.js` | **Binario real (Electron 45.2.3)** | 10/10 | Arranca la app de escritorio (y la **empaquetada**) con ventana oculta: sin `require`/`process`, API mínima, `localStorage`, modo invitado, navegación externa bloqueada, intentos de salirse de `www` rechazados. **No forma parte de `npm test`** (necesita Electron); lo ejecuta el workflow de Windows |
 
-**Total en `npm test`: 1.772 comprobaciones explícitas** (sin contar las 12.780 preguntas generadas ni las 6.000 acciones aleatorias).
+**Total en `npm test`: 1.845 comprobaciones explícitas** (incluye `pwa.test.js`: 57; `desktop.test.js`: 110; `android.test.js`: 51, con los iconos) (sin contar las 12.780 preguntas generadas ni las 6.000 acciones aleatorias).
 
 ## Pruebas de mutación (los tests detectan errores introducidos a propósito)
 

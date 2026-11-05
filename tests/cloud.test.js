@@ -29,7 +29,7 @@ const dom=new JSDOM(html.replace(/<link[^>]*fonts.googleapis[^>]*>/g,""),{runScr
    if(u.pathname=="/auth/v1/otp"){db.otpRedir=u.searchParams.get("redirect_to");return R(200,{})}
    if(u.pathname=="/auth/v1/logout"){db.logoutQ=u.search;return R(204,null)}
    if(u.pathname=="/auth/v1/recover"){db.rec=b.email;db.redir=u.searchParams.get("redirect_to");return R(200,{})}
-   if(u.pathname=="/auth/v1/user"&&o.method=="PUT"){db.newpw=b.password;return R(200,{})}
+   if(u.pathname=="/auth/v1/user"&&o.method=="PUT"){db.newpw=b.password;if(db.pwTrack){const em=Object.keys(db.users).find(e=>db.users[e].id==db.cur);if(em)db.users[em].pw=b.password}return R(200,{})}
    if(u.pathname=="/rest/v1/profiles"){db.profiles=b;return R(201,null)}
    if(u.pathname=="/rest/v1/stats"){if(o.method=="POST"){db.statsWrites=(db.statsWrites||0)+1;return R(403,{message:"permission denied for table stats"})}
      const id=u.searchParams.get("user_id").replace("eq.","");return R(200,db.st[id]?[{xp:db.st[id].xp}]:[])}
@@ -179,6 +179,24 @@ const setf=(e,p)=>ev(`document.querySelector("#cE").value=${JSON.stringify(e)};$
  ok("pantalla de cambio de contraseña con botón «Cancelar»",!!w.document.querySelector("#cN1")&&/Cancelar/.test(T()));
  [...w.document.querySelectorAll("#app button")].find(b=>/Cancelar/.test(b.textContent)).click();await sleep(100);
  ok("cancelar vuelve al perfil sin cambiar nada",!w.document.querySelector("#cN1")&&/Cuenta y nube/.test(T())&&db.newpw!=="cambiada123");
+ db.pwTrack=1;
  ev(`cmsg='';bwnp()`);ev(`document.querySelector("#cN1").value="cambiada123";document.querySelector("#cN2").value="cambiada123";bnpw()`);await sleep(300);
- ok("cambiar la contraseña desde el perfil la guarda en el servidor y vuelve a la app",db.newpw==="cambiada123"&&!w.document.querySelector("#cN1"));
+ ok("cambiar la contraseña desde el perfil la guarda en el servidor",db.newpw==="cambiada123"&&!w.document.querySelector("#cN1"));
+ ok("tras cambiarla se EXIGE iniciar sesión de nuevo: sesión cerrada en el servidor para TODOS los dispositivos",ev(`AU`)===null&&!!w.document.querySelector("#cE")&&/Contraseña cambiada/.test(T())&&db.logoutQ==="?scope=global");
+ setf("a@b.com","password1");ev(`cgo("i")`);await sleep(250);
+ ok("la contraseña antigua deja de servir",ev(`AU`)===null&&/Invalid login/.test(T()));
+ setf("a@b.com","cambiada123");ev(`cgo("i")`);await sleep(300);
+ ok("la contraseña nueva sí permite entrar",ev(`AU`)!==null&&ev(`AU.id`)==="u1");
+ // cerrar sesión: solo este dispositivo (por defecto) o todos (con confirmación)
+ w.confirm=()=>false;await ev(`cout(1)`);await sleep(100);
+ ok("«cerrar sesión en todos los dispositivos» sin confirmar no hace nada",ev(`AU`)!==null);
+ w.confirm=()=>true;await ev(`cout(1)`);await sleep(100);
+ ok("confirmando, revoca las sesiones de todos los dispositivos (scope=global) y vuelve al acceso",ev(`AU`)===null&&db.logoutQ==="?scope=global"&&!!w.document.querySelector("#cE"));
+ setf("a@b.com","cambiada123");ev(`cgo("i")`);await sleep(300);await ev(`cout()`);await sleep(100);
+ ok("el cierre normal solo revoca ESTE dispositivo (scope=local)",db.logoutQ==="?scope=local"&&ev(`AU`)===null);
+ // invitado con progreso pendiente que entra en una cuenta EXISTENTE: sus eventos se envían y validan (no se pierden)
+ ev(`gst()`);await sleep(50);
+ ev(`S.track="g";S.last=new Date().toISOString().slice(0,10);xevPush({kind:"level",ref:"lv:g:1:77",xp:10,day:S.last});S.xp+=10;tab="p";home()`);await sleep(100);
+ db.aw=[];setf("a@b.com","cambiada123");ev(`cgo("i")`);await sleep(600);
+ ok("invitado → cuenta existente: los eventos pendientes del invitado se envían al servidor",db.aw.some(x=>x.p_ref==="lv:g:1:77"&&x.p_kind==="level")&&JSON.parse(w.localStorage.getItem("bitty_xq")||"[]").length===0);
  console.log(out.join("\n"));console.log("ERRORES JS:",errs.length);errs.forEach(e=>console.log(e));process.exit(out.some(x=>x.startsWith("FALLO"))||errs.length?1:0)})();

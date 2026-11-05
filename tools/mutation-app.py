@@ -6,15 +6,19 @@ root = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.
 H = os.path.join(root, "www", "index.html"); MF = os.path.join(root, "android", "app", "src", "main", "AndroidManifest.xml")
 M = [
  (H, "el registro deja de indicar la página de confirmación", 'k=="s"?"/auth/v1/signup"+RURLC():', 'k=="s"?"/auth/v1/signup":', "cloud"),
- (H, "el cierre de sesión vuelve a ser global", '"/auth/v1/logout?scope=local"', '"/auth/v1/logout"', "cloud"),
  (H, "el reenvío pierde la espera de 60 s", 'if(Date.now()-last<60000){cmsg=', 'if(false){cmsg=', "cloud"),
  (H, "el reenvío revela errores del servidor (distingue cuentas)", '(!st||st>=500)', '(!st||st>=400)', "cloud"),
+ (H, "el cierre de sesión normal revoca TODOS los dispositivos", '"/auth/v1/logout?scope="+(g?"global":"local")', '"/auth/v1/logout?scope=global"', "cloud"),
  (H, "el enlace profundo acepta parámetros", 'x.hostname!=="confirmed"||x.search||x.hash', 'x.hostname!=="confirmed"', "android"),
  (H, "el enlace profundo acepta cualquier host", 'x.hostname!=="confirmed"', 'false', "android"),
- (H, "el enlace profundo acepta otros esquemas", 'x.protocol!=="com.bitty.app:"||', '', "android"),
+ (H, "el enlace profundo acepta otros esquemas", 'if((x.protocol!=="com.bitty.app:"&&x.protocol!=="bitty:")||x.hostname', 'if(x.hostname', "android"),
  (H, "el botón atrás no gestiona la pantalla de contraseña", ' if($("#cN1")){cpwx();return true}', '', "android"),
  (H, "el cambio de contraseña pierde el botón cancelar", 'onclick="cpwx()">${tt("Cancelar"', 'onclick="">${tt("Cancelar"', "cloud"),
  (MF, "el manifiesto declara un App Link https autoverificado", '<data android:scheme="com.bitty.app" android:host="confirmed" />', '<data android:scheme="https" android:host="x.example" /><data android:scheme="com.bitty.app" android:host="confirmed" />', "android"),
+ (H, "cambiar la contraseña ya no revoca las sesiones de todos los dispositivos", '/auth/v1/logout?scope=global",{method:"POST"},t)', '/auth/v1/logout?scope=local",{method:"POST"},t)', "cloud"),
+ (H, "cambiar la contraseña deja la sesión abierta", 'clearTimeout(ctm);AU=null;MF=null;ME=null;MP=null;asave();AS=1;amode="i";', 'clearTimeout(ctm);MF=null;ME=null;MP=null;asave();AS=1;amode="i";', "cloud"),
+ (H, "«cerrar sesión en todos» no pide confirmación", 'if(g&&!confirm(', 'if(false&&!confirm(', "cloud"),
+ (H, "«cerrar sesión en todos» solo revoca este dispositivo", '"/auth/v1/logout?scope="+(g?"global":"local")', '"/auth/v1/logout?scope=local"', "cloud"),
  (MF, "el filtro profundo acepta cualquier host", ' android:host="confirmed"', '', "android"),
 ]
 bad = 0

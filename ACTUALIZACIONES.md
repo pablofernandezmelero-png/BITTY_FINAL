@@ -11,13 +11,24 @@ Tú lanzas el workflow con "publish_release" ──► GitHub Release «build-N�
         ▼                                               ▼
  Página pública  …/BITTY_FINAL/descargar/        La app de Android, al abrirse (máx. 1 vez cada 12 h),
  (botones: APK, Windows, iPhone, web)            pregunta a GitHub cuál es la última «build-N».
-                                                 Si N > su versionCode → aviso «Hay una versión nueva» → «Descargar»
+                                                 Si N > su versionCode → aviso «¡Hay una nueva versión de Bitty!» → «Actualizar ahora»
                                                  (abre la página /descargar/ en el navegador)
 ```
 
-- **Android:** el aviso solo aparece en la app nativa, con conexión, fuera de un nivel, y solo avisa (no instala ni descarga solo). «Más tarde» recuerda esa versión y no vuelve a molestar hasta que haya otra más nueva.
+- **Android y Windows (el aviso):** en la app nativa, al abrirla y al volver a la pantalla principal, se compara la versión instalada con la última publicada. Si hay una más nueva sale, **arriba** (el banner nativo de AdMob taparía un aviso abajo), «¡Hay una nueva versión de Bitty!» · «Hemos mejorado la aplicación. Actualiza para disfrutar de las novedades.» · «Versión N» · botones **«Actualizar ahora»** (abre la página de descargas ya existente, fuera de la app) y «Más tarde». No sale dentro de un nivel (sale al terminarlo). **Persistencia:** la versión nueva se guarda en el dispositivo (`bitty_upd_n`); «Más tarde» solo oculta el aviso en esa sesión, así que **vuelve a salir al reabrir la app (también sin internet) y pasadas 6 horas con la app abierta**, hasta que se actualice (entonces se borra solo). Consulta a GitHub como mucho cada 12 h. Solo avisa: no descarga ni instala.
 - **Web / iPhone (PWA):** no hace falta publicar nada. Cada `push` actualiza GitHub Pages; el service worker es «red primero», y cuando toma el control una versión nueva sale el aviso «Hay una versión nueva» con el botón «Actualizar» (recarga solo si pulsas, por si hay un nivel en curso).
 - **Windows:** el instalador se publica en la Release fija `desktop-latest`; la página de descargas lo ofrece. La app de escritorio **avisa** igual que la de Android: su versión es `1.0.N` (N = nº de ejecución del workflow; la lee del instalador por un canal interno seguro) y la Release `desktop-latest` lleva en el título `Bitty para Windows (build N)`. Si N es mayor que el de la instalación, sale «Hay una versión nueva…» y «Descargar» abre la página de descargas en el navegador. **No se auto-actualiza** (no hay descarga ni instalación automática: haría falta `electron-updater` y, para que funcione bien, firma de código). Hasta que se publique con el workflow nuevo, la Release actual no lleva el número en el título y el aviso no sale.
+
+## Automatización (sin tocar el código)
+
+La fuente centralizada de versiones son **las Releases de GitHub**: el workflow firmado publica `build-N` (Android) y el de Windows pone el número en el título de `desktop-latest`. Las apps leen eso. **No hay que editar ningún archivo de la app para anunciar una versión nueva:** basta con publicar la Release con el workflow.
+
+## Probar el aviso sin publicar nada
+
+- **Vista previa en la web (la haces tú, sin instalar nada):** abre `https://pablofernandezmelero-png.github.io/BITTY_FINAL/#probar-aviso` (en el móvil o en el ordenador). Tras un segundo sale el aviso con el diseño real, marcado «Vista previa de prueba: no es una actualización real»; «Actualizar ahora» abre la página de descargas. No consulta GitHub, no guarda nada, y no hace nada en las apps de Android ni de escritorio. *(Solo disponible cuando se publique la web con este cambio.)*
+- **Comprobado en un Android real (emulador, 6 de noviembre de 2026):** una APK de prueba que «cree» tener la versión 1 instalada detectó con la **API real de GitHub** la `build-1004`: salió el aviso (`docs/evidencias/aviso-actualizacion-android-1-aparece.png`), **volvió a salir al reabrir la app sin internet** tras cerrarlo (`...-2-vuelve-sin-internet.png`) y «Update now» abrió Chrome en la página de descargas (`...-3-pagina-de-descargas.png`). No se publicó ninguna Release ni se tocó ninguna app instalada.
+- **Por qué no se puede probar con tu app instalada ahora:** la `build-1004` lleva el aviso **antiguo** (texto y botón distintos, sin persistencia) y la app de Windows instalada (1.0.0) no lleva aviso. El aviso nuevo llega a los usuarios con la **próxima APK firmada** y el **próximo instalador de Windows**. Para ver el flujo real de punta a punta hacen falta **dos** versiones publicadas: una con el aviso nuevo (para instalarla) y otra más nueva (para que avise).
+
 
 ## Publicar una versión (tú, en GitHub)
 

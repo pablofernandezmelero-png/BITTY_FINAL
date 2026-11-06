@@ -1479,7 +1479,7 @@ async function adBanner(on){const P=adP();if(!P)return;
   else if(!on&&adBan){adBan=0;adSpace(0);await P.hideBanner()}}catch(e){adBan=0}}
 // Si cambia el alto de la barra (girar la pantalla, tamaño de letra, idioma), se recoloca el banner con el margen nuevo.
 addEventListener("resize",()=>{clearTimeout(adRt);adRt=setTimeout(async()=>{const P=adP();if(!P||!adBan||Math.abs(adMargin()-adM)<2)return;adBan=0;try{await P.removeBanner()}catch(e){}adBanner(true)},400)});
-{const n0=navr;navr=on=>{n0(on);setTimeout(()=>adBanner(!!on),0)}}   // tras repintar, para saber si hay un nivel/resultado en pantalla
+{const n0=navr;navr=on=>{n0(on);setTimeout(()=>adBanner(!!on),0);if(on)setTimeout(()=>{try{updCheck()}catch(e){}},900)}}   // tras repintar, para saber si hay un nivel/resultado en pantalla
 function adGrant(){const st=adSt();if(st.n>=ADS.max)return;st.n++;st.t=Date.now();adSave(st);
  const day=dstr(new Date());S.xp+=ADS.bonus;xevPush({kind:"ad",ref:"ad:"+day+":"+st.n,xp:ADS.bonus,day});save();
  adMsg=tt("¡+"+ADS.bonus+" bytes de bonus!","+"+ADS.bonus+" bonus bytes!","+"+ADS.bonus+" bonusbytes!");adBusy=0;cre()}
@@ -1540,39 +1540,55 @@ addEventListener("offline",offUI);addEventListener("online",()=>{offUI();if(AU&&
 // ---- Avisos de actualización: APK nueva (Android) y versión nueva de la web (PWA). Nunca instala ni recarga solo: solo avisa.
 // La última APK la publica GitHub Actions como Release «build-N» (N = versionCode). El enlace es una constante: nada de lo que
 // devuelve la API decide a dónde se va.
-const UPD={api:"https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/latest",apiDesk:"https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/tags/desktop-latest",page:"https://pablofernandezmelero-png.github.io/BITTY_FINAL/descargar/",every:12*36e5};
-function updBar(msg,okTxt,okFn,okHref,laterFn){
+const UPD={api:"https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/latest",apiDesk:"https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/tags/desktop-latest",page:"https://pablofernandezmelero-png.github.io/BITTY_FINAL/descargar/",every:12*36e5,again:6*36e5};
+let updOff=0;   // momento en que el usuario cerró el aviso EN ESTA SESIÓN (en memoria: al reabrir la app vuelve a salir)
+// Aviso arriba (no abajo): abajo están la barra de navegación y el banner NATIVO de AdMob, que se dibuja por encima de la web y taparía los botones.
+function updBar(title,msg,sub,okTxt,okFn,okHref,laterTxt){
  const old=$("#upd");if(old)old.remove();
  const e=document.createElement("div");e.id="upd";e.setAttribute("role","status");
- e.style.cssText="position:fixed;left:12px;right:12px;bottom:84px;max-width:496px;margin:0 auto;background:#2a1f4d;color:#fff;border-radius:16px;padding:12px 14px;z-index:98;box-shadow:0 6px 20px rgba(0,0,0,.4);font-size:14px;line-height:1.35";
- const t=document.createElement("div");t.textContent=msg;e.appendChild(t);
- const r=document.createElement("div");r.style.cssText="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:10px";
- const b=document.createElement("button");b.id="updLater";b.textContent=tt("Más tarde","Later","Later");b.style.cssText="background:none;border:0;color:#d9d0ff;font:inherit;font-weight:700;padding:8px 10px";
- b.onclick=()=>{e.remove();if(laterFn)laterFn()};r.appendChild(b);
+ e.style.cssText="position:fixed;left:12px;right:12px;top:calc(38px + env(safe-area-inset-top,0px));max-width:496px;margin:0 auto;background:#2a1f4d;color:#fff;border-radius:16px;padding:14px 16px;z-index:98;box-shadow:0 6px 20px rgba(0,0,0,.45);font-size:14px;line-height:1.4";
+ const h=document.createElement("div");h.id="updT";h.textContent=title;h.style.cssText="font-weight:800;font-size:16px;margin-bottom:4px";e.appendChild(h);
+ const t=document.createElement("div");t.id="updM";t.textContent=msg;e.appendChild(t);
+ if(sub){const s=document.createElement("div");s.id="updV";s.textContent=sub;s.style.cssText="opacity:.7;font-size:12px;margin-top:4px";e.appendChild(s)}
+ const r=document.createElement("div");r.style.cssText="display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:12px";
+ if(laterTxt){const b=document.createElement("button");b.id="updLater";b.textContent=laterTxt;b.style.cssText="background:none;border:0;color:#d9d0ff;font:inherit;font-weight:700;padding:8px 10px;cursor:pointer";
+  b.onclick=()=>{e.remove();updOff=Date.now()};r.appendChild(b)}
  const o=document.createElement(okHref?"a":"button");o.id="updOk";o.textContent=okTxt;
- o.style.cssText="background:linear-gradient(135deg,#6d4aff,#ff4d8d);border:0;color:#fff;font:inherit;font-weight:800;padding:9px 16px;border-radius:12px;text-decoration:none;cursor:pointer";
+ o.style.cssText="background:linear-gradient(135deg,#6d4aff,#ff4d8d);border:0;color:#fff;font:inherit;font-weight:800;padding:10px 18px;border-radius:12px;text-decoration:none;cursor:pointer";
  if(okHref){o.href=okHref;o.target="_blank";o.rel="noopener noreferrer"}else o.onclick=okFn;
  r.appendChild(o);e.appendChild(r);document.body.appendChild(e);return e}
+function updNew(n,prev){return updBar(tt("¡Hay una nueva versión de Bitty!","There's a new version of Bitty!","Er is een nieuwe versie van Bitty!"),
+ tt("Hemos mejorado la aplicación. Actualiza para disfrutar de las novedades.","We've improved the app. Update to enjoy what's new.","We hebben de app verbeterd. Werk bij om van de nieuwigheden te genieten."),
+ prev?tt("Vista previa de prueba: no es una actualización real","Test preview: this is not a real update","Testvoorbeeld: dit is geen echte update"):tt("Versión "+n,"Version "+n,"Versie "+n),tt("Actualizar ahora","Update now","Nu bijwerken"),null,UPD.page,tt("Más tarde","Later","Later"))}
+// La versión nueva se GUARDA (bitty_upd_n): el aviso sale en cada arranque mientras la instalada sea menor, aunque no haya conexión o se haya
+// cerrado antes. «Más tarde» solo lo oculta en esta sesión (vuelve al reabrir la app o pasadas UPD.again horas). Desaparece solo al actualizar.
 async function updCheck(){
  try{
-  // Android (app nativa: versionCode) o escritorio (Electron: versión 1.0.N). En la web/PWA no se consulta nada.
+  // Android (app nativa: versionCode) o escritorio (Electron: versión 1.0.N). En la web/PWA no se consulta nada (la web siempre es la última).
   const nat=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform(),A=nat&&Capacitor.Plugins&&Capacitor.Plugins.App,D=window.bittyDesktop;
   const desk=!A&&!!D&&D.isDesktop===true&&typeof D.version==="string"&&/^\d{1,3}\.\d{1,3}\.\d{1,6}$/.test(D.version);
-  if(!(A&&A.getInfo)&&!desk)return;if(!navigator.onLine||adInLevel()||$("#upd"))return;
-  if(Date.now()-(+localStorage.getItem("bitty_upd_t")||0)<UPD.every)return;
+  if(!(A&&A.getInfo)&&!desk)return;
   const cur=desk?parseInt(D.version.split(".")[2],10):parseInt((await A.getInfo()).build,10);if(!(cur>0))return;
+  const show=n=>{if(adInLevel()||(updOff&&Date.now()-updOff<UPD.again))return;const o=$("#upd");if(o&&o.dataset.n===String(n))return;updNew(n).dataset.n=String(n)};   // si ya hay un aviso con otra versión, se sustituye por la más nueva
+  let st=0;try{st=+localStorage.getItem("bitty_upd_n")||0}catch(e){}
+  if(st&&st<=cur){try{localStorage.removeItem("bitty_upd_n")}catch(e){}st=0}   // ya se actualizó: el aviso guardado deja de valer
+  if(st)show(st);
+  if(!navigator.onLine||Date.now()-(+localStorage.getItem("bitty_upd_t")||0)<UPD.every)return;
   const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);
   const r=await fetch(desk?UPD.apiDesk:UPD.api,{headers:{Accept:"application/vnd.github+json"},credentials:"omit",referrerPolicy:"no-referrer",signal:c.signal});clearTimeout(to);
   if(!r.ok)return;
   const j=await r.json(),m=desk?/^Bitty para Windows \(build (\d{1,6})\)$/.exec(String(j&&j.name||"")):/^build-(\d{1,6})$/.exec(String(j&&j.tag_name||""));
   if(!m||j.draft||j.prerelease)return;
   localStorage.setItem("bitty_upd_t",String(Date.now()));
-  const n=+m[1];if(n<=cur||localStorage.getItem("bitty_upd_skip")===String(n))return;
-  updBar(tt("Hay una versión nueva de Bitty (versión "+n+"). Descárgala e instálala para tener las últimas mejoras.","A new version of Bitty is available (version "+n+"). Download and install it to get the latest improvements.","Er is een nieuwe versie van Bitty (versie "+n+"). Download en installeer die voor de nieuwste verbeteringen."),tt("Descargar","Download","Downloaden"),null,UPD.page,()=>{try{localStorage.setItem("bitty_upd_skip",String(n))}catch(e){}})
+  const n=+m[1];
+  if(n<=cur){localStorage.removeItem("bitty_upd_n");return}
+  localStorage.setItem("bitty_upd_n",String(n));show(n)
  }catch(e){}}
 setTimeout(updCheck,4000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(updCheck,1500)});
 // Web/PWA: cuando el service worker nuevo toma el control, la pestaña sigue con el código viejo hasta recargar: se ofrece recargar (sin hacerlo solo, por si hay un nivel en curso).
-try{if("serviceWorker"in navigator&&navigator.serviceWorker.controller){navigator.serviceWorker.addEventListener("controllerchange",()=>{if($("#upd"))return;updBar(tt("Hay una versión nueva de Bitty.","A new version of Bitty is available.","Er is een nieuwe versie van Bitty."),tt("Actualizar","Update","Bijwerken"),()=>location.reload())})}}catch(e){}
+try{if("serviceWorker"in navigator&&navigator.serviceWorker.controller){navigator.serviceWorker.addEventListener("controllerchange",()=>{if($("#upd"))return;updBar(tt("¡Hay una nueva versión de Bitty!","There's a new version of Bitty!","Er is een nieuwe versie van Bitty!"),tt("Hemos mejorado la aplicación. Actualiza para disfrutar de las novedades.","We've improved the app. Update to enjoy what's new.","We hebben de app verbeterd. Werk bij om van de nieuwigheden te genieten."),"",tt("Actualizar ahora","Update now","Nu bijwerken"),()=>location.reload(),null,tt("Más tarde","Later","Later"))})}}catch(e){}
+// Vista previa del aviso (solo en la web, nunca en Android ni escritorio): abre la web con #probar-aviso para ver el diseño y el botón sin publicar ninguna versión. No guarda nada.
+try{if(!window.Capacitor&&!window.bittyDesktop&&/(^|[#?&])probar-aviso($|[&=])/.test(location.hash+location.search))setTimeout(()=>{if(!$("#upd"))updNew(0,1)},1200)}catch(e){}
 document.documentElement.lang=S.lang;
 AS?wl():S.track?home():welcome();
 </script></body></html>

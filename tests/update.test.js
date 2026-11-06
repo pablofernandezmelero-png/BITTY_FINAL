@@ -17,7 +17,7 @@ function boot(o) {
   vc.on("jsdomError", e => errs.push(String(e.message)));
   const sw = o.sw ? Object.assign(new (require("events").EventEmitter)(), { controller: o.sw === "ctl" ? {} : null }) : null;
   const dom = new JSDOM(appHtml, {
-    runScripts: "dangerously", pretendToBeVisual: true, virtualConsole: vc, url: "http://localhost/",
+    runScripts: "dangerously", pretendToBeVisual: true, virtualConsole: vc, url: "http://localhost/" + (o.hash || ""),
     beforeParse(w) {
       w.Element.prototype.scrollIntoView = () => {};
       Object.defineProperty(w.navigator, "language", { value: o.lang || "es-ES", configurable: true });
@@ -39,26 +39,46 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
   let t = boot({ build: 3, rel: rel("build-5") }); await sleep(150);
   await t.w.eval("updCheck()");
   ok(!!t.bar(), "build 5 publicada y la app es la 3: aparece el aviso");
-  ok(/versión nueva de Bitty/.test(t.bar().textContent) && /Descargar/.test(t.bar().textContent) && /Más tarde/.test(t.bar().textContent), "el aviso está en español con «Descargar» y «Más tarde»");
-  ok(/\(versión 5\)/.test(t.bar().textContent), "el aviso dice qué versión es la nueva (versión 5)");
+  const q = id => t.w.document.querySelector(id);
+  ok(q("#updT").textContent === "¡Hay una nueva versión de Bitty!", "título: «¡Hay una nueva versión de Bitty!»");
+  ok(q("#updM").textContent === "Hemos mejorado la aplicación. Actualiza para disfrutar de las novedades.", "mensaje: «Hemos mejorado la aplicación. Actualiza para disfrutar de las novedades.»");
+  ok(q("#updV").textContent === "Versión 5" && q("#updOk").textContent === "Actualizar ahora" && /Más tarde/.test(q("#updLater").textContent), "dice la versión nueva, botón «Actualizar ahora» y «Más tarde»");
   const a = t.w.document.querySelector("#updOk");
-  ok(a && a.tagName === "A" && a.href === PAGE && a.target === "_blank" && /noopener/.test(a.rel), "«Descargar» lleva a la página pública /descargar/ (constante), en pestaña nueva y con noopener");
+  ok(a && a.tagName === "A" && a.href === PAGE && a.target === "_blank" && /noopener/.test(a.rel), "«Actualizar ahora» lleva a la página de descargas ya existente (constante), en pestaña nueva y con noopener");
+  const bar = (appHtml.match(/e\.style\.cssText="position:fixed;left:12px;right:12px;top:calc\(38px[^"]*"/) || [""])[0];   // jsdom no entiende env(): se comprueba el código fuente
+  ok(/top:calc\(38px \+ env\(safe-area-inset-top,0px\)\)/.test(bar) && !/bottom/.test(bar), "el aviso va ARRIBA (respeta la zona segura): abajo el banner nativo de AdMob taparía los botones");
   ok(!t.w.document.body.innerHTML.includes("evil.example"), "nada de lo que devuelve la API decide el destino del enlace");
   const f = t.calls.find(c => c.u === API);
   ok(f && f.init.credentials === "omit" && f.init.referrerPolicy === "no-referrer", "la consulta va sin cookies ni referer");
   ok(t.calls.filter(c => c.u === API).length === 1, "una sola consulta");
   ok(t.w.document.querySelector("#upd").getAttribute("role") === "status", "accesible: role=status");
-  // «Más tarde»: se recuerda esa versión
+  // ---- PERSISTENCIA: «Más tarde» solo oculta el aviso en esta sesión; mientras no se actualice, vuelve
   t.w.document.querySelector("#updLater").click();
-  ok(!t.bar() && t.w.localStorage.getItem("bitty_upd_skip") === "5", "«Más tarde» cierra el aviso y recuerda la versión 5");
+  ok(!t.bar(), "«Más tarde» cierra el aviso");
+  ok(t.w.localStorage.getItem("bitty_upd_n") === "5", "la versión nueva queda GUARDADA: cerrar el aviso no la borra");
   t.w.localStorage.removeItem("bitty_upd_t"); await t.w.eval("updCheck()");
-  ok(!t.bar(), "no vuelve a molestar por la misma versión");
-  // una aún más nueva sí avisa
-  const t2 = boot({ build: 3, rel: rel("build-6"), ls: { bitty_upd_skip: "5" } }); await sleep(150); await t2.w.eval("updCheck()");
-  ok(!!t2.bar(), "pero una versión posterior (6) sí vuelve a avisar");
-  // límite de frecuencia
-  t2.w.document.querySelector("#updLater").click(); const before = t2.calls.length; await t2.w.eval("updCheck()");
-  ok(t2.calls.length === before, "como mucho una consulta cada 12 horas");
+  ok(!t.bar(), "dentro de la misma sesión no insiste enseguida");
+  const ls1 = { bitty_upd_n: t.w.localStorage.getItem("bitty_upd_n"), bitty_upd_t: String(Date.now()) };
+  const t2 = boot({ build: 3, rel: "throw", ls: ls1 }); await sleep(150); await t2.w.eval("updCheck()");
+  ok(!!t2.bar() && t2.w.document.querySelector("#updV").textContent === "Versión 5", "al reabrir la app vuelve a salir el aviso aunque se hubiera cerrado");
+  ok(!t2.calls.some(c => c.u === API), "...y sin conexión ni consulta a GitHub: usa la versión guardada");
+  t2.w.document.querySelector("#updLater").click(); await t2.w.eval("updCheck()");
+  ok(!t2.bar(), "otra vez cerrado, no insiste en esa sesión");
+  await t2.w.eval("updOff=Date.now()-7*36e5"); await t2.w.eval("updCheck()");
+  ok(!!t2.bar(), "pasadas 6 horas en la misma sesión (app abierta mucho tiempo) vuelve a salir");
+  const t3 = boot({ build: 5, rel: rel("build-5"), ls: { bitty_upd_n: "5" } }); await sleep(120); await t3.w.eval("updCheck()");
+  ok(!t3.bar() && t3.w.localStorage.getItem("bitty_upd_n") === null, "al actualizar (instalada = guardada) el aviso desaparece y se borra lo guardado");
+  const t3b = boot({ build: 9, rel: rel("build-5"), ls: { bitty_upd_n: "5" } }); await sleep(120); await t3b.w.eval("updCheck()");
+  ok(!t3b.bar() && t3b.w.localStorage.getItem("bitty_upd_n") === null, "instalada MÁS nueva que la guardada: tampoco avisa");
+  const t4 = boot({ build: 3, rel: rel("build-8"), ls: { bitty_upd_n: "5" } }); await sleep(120); await t4.w.eval("updCheck()");
+  ok(t4.w.localStorage.getItem("bitty_upd_n") === "8" && t4.w.document.querySelector("#updV").textContent === "Versión 8", "si GitHub publica una versión aún más nueva que la guardada, se actualiza (8)");
+  const t5 = boot({ build: 3, rel: rel("build-4"), ls: { bitty_upd_n: "9" } }); await sleep(120); await t5.w.eval("updCheck()");
+  ok(t5.w.localStorage.getItem("bitty_upd_n") === "4", "si la versión guardada ya no existe en GitHub, se corrige a la real (4)");
+  const t6 = boot({ build: 3, rel: rel("build-6") }); await sleep(150); await t6.w.eval("updCheck()");
+  ok(!!t6.bar(), "una versión nueva (6) sin nada guardado también avisa");
+  t6.w.document.querySelector("#updLater").click(); const before = t6.calls.length; await t6.w.eval("updCheck()");
+  ok(t6.calls.length === before, "como mucho una consulta a GitHub cada 12 horas");
+  ok(!!JSON.parse(JSON.stringify({ ok: 1 })).ok, "");
 
   // ---- casos en los que NO debe avisar
   for (const [name, o] of [
@@ -84,12 +104,15 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
   ok(!x.bar(), "si la app no sabe su versión no avisa");
   x = boot({ build: 3, rel: rel("build-9") }); await sleep(100);
   x.w.document.body.insertAdjacentHTML("beforeend", '<button onclick="xq()">salir</button>'); await x.w.eval("updCheck()");
-  ok(!x.bar() && !x.calls.some(c => c.u === API), "no interrumpe un nivel en curso");
+  ok(!x.bar(), "no interrumpe un nivel en curso (no sale el aviso)");
+  ok(x.w.localStorage.getItem("bitty_upd_n") === "9", "...pero la versión nueva queda guardada");
+  x.w.document.querySelector('[onclick="xq()"]').remove(); await x.w.eval("updCheck()");
+  ok(!!x.bar(), "al salir del nivel el aviso aparece");
 
   // ---- app de escritorio (Electron): versión 1.0.N frente al título «Bitty para Windows (build N)» de la Release desktop-latest
   const dRel = n => ({ tag_name: "desktop-latest", name: "Bitty para Windows (build " + n + ")", draft: false, prerelease: false });
   x = boot({ native: false, desk: "1.0.5", relDesk: dRel(9) }); await sleep(100); await x.w.eval("updCheck()");
-  ok(!!x.bar() && /\(versión 9\)/.test(x.bar().textContent), "escritorio: la 1.0.5 instalada y la build 9 publicada → aviso con la versión 9");
+  ok(!!x.bar() && x.w.document.querySelector("#updV").textContent === "Versión 9" && x.w.document.querySelector("#updOk").textContent === "Actualizar ahora", "escritorio: la 1.0.5 instalada y la build 9 publicada → aviso con «Actualizar ahora» y la versión 9");
   ok(x.calls.some(c => c.u === APID) && !x.calls.some(c => c.u === API), "escritorio: consulta la Release desktop-latest (no la de Android)");
   ok(x.w.document.querySelector("#updOk").href === PAGE && x.w.document.querySelector("#updOk").target === "_blank", "escritorio: «Descargar» abre la página de descargas (constante) fuera de la app");
   for (const [name, o] of [["misma versión", { desk: "1.0.9", relDesk: dRel(9) }], ["instalada más nueva", { desk: "1.0.12", relDesk: dRel(9) }],
@@ -102,16 +125,34 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
   x = boot({ native: false, relDesk: dRel(9) }); await sleep(100); await x.w.eval("updCheck()");
   ok(!x.bar() && !x.calls.some(c => c.u === APID || c.u === API), "web/PWA (sin app ni escritorio): no se consulta nada");
 
+  // ---- el aviso se vuelve a comprobar al volver a la pantalla principal (si salió la versión mientras había un nivel en curso)
+  x = boot({ build: 3, rel: rel("build-9"), ls: { bitty_upd_n: "9", bitty_upd_t: String(Date.now()) } }); await sleep(100);
+  x.w.document.body.insertAdjacentHTML("beforeend", '<button onclick="xq()">salir</button>'); await x.w.eval("updCheck()");
+  ok(!x.bar(), "en un nivel no sale el aviso guardado");
+  x.w.document.querySelector('[onclick="xq()"]').remove(); x.w.eval("navr(true)"); await sleep(1300);
+  ok(!!x.bar() && x.w.document.querySelector("#updV").textContent === "Versión 9", "al volver a mostrarse la barra de navegación (fuera del nivel) el aviso aparece solo, sin esperar a otra comprobación");
+
+  // ---- VISTA PREVIA de prueba (solo en la web): enseña el aviso real sin publicar ninguna versión ni guardar nada
+  x = boot({ native: false, hash: "#probar-aviso" }); await sleep(1500);
+  ok(!!x.bar() && x.w.document.querySelector("#updT").textContent === "¡Hay una nueva versión de Bitty!" && x.w.document.querySelector("#updOk").textContent === "Actualizar ahora", "vista previa web (#probar-aviso): sale el aviso real con «Actualizar ahora»");
+  ok(/Vista previa de prueba: no es una actualización real/.test(x.w.document.querySelector("#updV").textContent), "...marcado claramente como vista previa, no como actualización real");
+  ok(x.w.document.querySelector("#updOk").href === PAGE && x.w.document.querySelector("#updOk").target === "_blank", "...y el botón lleva a la página de descargas existente");
+  ok(!x.calls.some(c => c.u === API || c.u === APID) && x.w.localStorage.getItem("bitty_upd_n") === null && x.w.localStorage.getItem("bitty_upd_t") === null, "...sin consultar GitHub ni guardar nada");
+  x.w.document.querySelector("#updLater").click(); ok(!x.bar(), "...y se puede cerrar");
+  for (const [name, o] of [["sin la marca en la dirección", { native: false }], ["en la app de Android", { build: 3, hash: "#probar-aviso" }], ["en la app de escritorio", { native: false, desk: "1.0.5", hash: "#probar-aviso" }], ["marca parecida", { native: false, hash: "#probar-avisos" }]]) {
+    const y = boot(o); await sleep(1500); ok(!y.bar(), "vista previa: no sale " + name);
+  }
+
   // ---- idiomas
   x = boot({ build: 3, rel: rel("build-5"), lang: "en-US" }); await sleep(100); await x.w.eval("updCheck()");
-  ok(/new version of Bitty is available \(version 5\)/.test(x.bar().textContent) && /Download/.test(x.bar().textContent), "aviso en inglés, con la versión");
+  ok(/There's a new version of Bitty!/.test(x.bar().textContent) && /We've improved the app\. Update to enjoy what's new\./.test(x.bar().textContent) && x.w.document.querySelector("#updOk").textContent === "Update now" && /Version 5/.test(x.bar().textContent), "aviso en inglés: título, mensaje, «Update now» y versión");
   x = boot({ build: 3, rel: rel("build-5"), lang: "nl-NL" }); await sleep(100); await x.w.eval("updCheck()");
-  ok(/nieuwe versie van Bitty \(versie 5\)/.test(x.bar().textContent) && /Downloaden/.test(x.bar().textContent), "aviso en neerlandés, con la versión");
+  ok(/Er is een nieuwe versie van Bitty!/.test(x.bar().textContent) && x.w.document.querySelector("#updOk").textContent === "Nu bijwerken" && /Versie 5/.test(x.bar().textContent), "aviso en neerlandés: título, «Nu bijwerken» y versión");
 
   // ---- web/PWA: versión nueva del service worker
   x = boot({ native: false, sw: "ctl" }); await sleep(100);
   x.sw.emit("controllerchange");
-  ok(!!x.bar() && /Actualizar/.test(x.bar().textContent) && x.bar().querySelector("#updOk").tagName === "BUTTON", "PWA: al tomar el control un service worker nuevo se ofrece «Actualizar» (no recarga sola)");
+  ok(!!x.bar() && /¡Hay una nueva versión de Bitty!/.test(x.bar().textContent) && x.bar().querySelector("#updOk").textContent === "Actualizar ahora" && x.bar().querySelector("#updOk").tagName === "BUTTON", "PWA: al tomar el control un service worker nuevo se ofrece «Actualizar ahora» (no recarga sola)");
   x = boot({ native: false, sw: "first" }); await sleep(100);
   x.sw.emit("controllerchange");
   ok(!x.bar(), "PWA: la primera instalación del service worker no muestra aviso");

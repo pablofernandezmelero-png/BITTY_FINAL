@@ -23,6 +23,8 @@ App educativa de informática (español, inglés y neerlandés). Una sola págin
 | [`PAGINA_CONFIRMACION.md`](PAGINA_CONFIRMACION.md) | Página pública `/auth/confirm/`, plantilla del correo, URLs de Supabase, alojamiento y dominio |
 | [`COMPILACION_ESCRITORIO.md`](COMPILACION_ESCRITORIO.md) | App de Windows (Electron): seguridad, compilación e instalador |
 | [`ACTUALIZACIONES.md`](ACTUALIZACIONES.md) | Página pública de descargas (/descargar/), aviso de actualización en la app y publicación de Releases |
+| [`VALIDACION_ANDROID_EMULADOR.md`](VALIDACION_ANDROID_EMULADOR.md) | Primera prueba en un Android real (emulador): arranque, banner, consentimiento y el arreglo del solapamiento, con capturas en `docs/evidencias/` |
+| [`www/privacidad/`](www/privacidad/index.html) | Política de privacidad (es/en/nl), publicada con la web; **faltan los datos de contacto del responsable** |
 | [`IPHONE.md`](IPHONE.md) | Bitty en iPhone como PWA instalable: instalación, limitaciones, pruebas y camino nativo |
 
 ## Estructura

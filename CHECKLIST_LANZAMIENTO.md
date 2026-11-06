@@ -76,8 +76,9 @@ El código de todas las fases está escrito y probado en local; **lo único comp
 6. Lanzar **Build Bitty Desktop (Windows)** y probar el instalador (`COMPILACION_ESCRITORIO.md`).
 7. Decidir: **dominio propio** (¿sí/no?), **público objetivo** (si hay menores), `applicationId` definitivo.
 8. **Publicar la última versión:** lanza el workflow con `publish_release` y comprueba la página `/descargar/` (ver `ACTUALIZACIONES.md`; la APK de depuración no se actualiza encima de otra: desinstala la anterior).
+8a. **RECORDATORIO — cada vez que cambie la app:** hay que publicar una versión nueva (workflow firmado y el de Windows, con `publish_release`) para que las apps instaladas muestren el aviso de actualización. Sin una Release más nueva, no avisa. Los cambios de hoy (banner sin solapar, aviso en escritorio, enlace de privacidad) **solo llegan a los móviles con la próxima APK firmada**.
 8b. **iPhone:** abre la web en Safari → Compartir → «Añadir a pantalla de inicio» y sigue la lista de `IPHONE.md` (no se ha podido probar en un iPhone real).
-9. Para publicar: política de privacidad, cuentas de AdMob y Play Console, keystore y secretos, y autorizar el autoalojado de las fuentes (los iconos ya están hechos).
+9. **Política de privacidad:** ya existe en `/privacidad/` (preliminar). Antes de publicar en tiendas: añade tu nombre y un correo privado de contacto, y decide el público objetivo (si incluye menores cambia la publicidad). Para publicar:  cuentas de AdMob y Play Console, keystore y secretos, y autorizar el autoalojado de las fuentes (los iconos ya están hechos).
 
 ## Lo que no se puede afirmar todavía
 

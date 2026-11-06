@@ -17,7 +17,7 @@ Tú lanzas el workflow con "publish_release" ──► GitHub Release «build-N�
 
 - **Android:** el aviso solo aparece en la app nativa, con conexión, fuera de un nivel, y solo avisa (no instala ni descarga solo). «Más tarde» recuerda esa versión y no vuelve a molestar hasta que haya otra más nueva.
 - **Web / iPhone (PWA):** no hace falta publicar nada. Cada `push` actualiza GitHub Pages; el service worker es «red primero», y cuando toma el control una versión nueva sale el aviso «Hay una versión nueva» con el botón «Actualizar» (recarga solo si pulsas, por si hay un nivel en curso).
-- **Windows:** el instalador se publica en la Release fija `desktop-latest`; la página de descargas lo ofrece. La app de escritorio **no** se auto-actualiza (haría falta `electron-updater` y firma de código).
+- **Windows:** el instalador se publica en la Release fija `desktop-latest`; la página de descargas lo ofrece. La app de escritorio **avisa** igual que la de Android: su versión es `1.0.N` (N = nº de ejecución del workflow; la lee del instalador por un canal interno seguro) y la Release `desktop-latest` lleva en el título `Bitty para Windows (build N)`. Si N es mayor que el de la instalación, sale «Hay una versión nueva…» y «Descargar» abre la página de descargas en el navegador. **No se auto-actualiza** (no hay descarga ni instalación automática: haría falta `electron-updater` y, para que funcione bien, firma de código). Hasta que se publique con el workflow nuevo, la Release actual no lleva el número en el título y el aviso no sale.
 
 ## Publicar una versión (tú, en GitHub)
 

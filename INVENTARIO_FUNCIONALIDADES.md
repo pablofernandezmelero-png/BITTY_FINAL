@@ -96,6 +96,9 @@ En ninguna fila hay prueba en **Android físico** ni contra **Supabase autentica
 | Funcionalidad | Estado | Prueba | Notas |
 |---|---|---|---|
 | SDK + consentimiento RGPD (UMP) | Implementada | Mock | IDs de **prueba** de Google |
+| Política de privacidad en 3 idiomas (`/privacidad/`), enlazada desde el Perfil y la página de descargas | Implementada (preliminar) | Pruebas de contenido y coherencia con el código | Faltan nombre y correo de contacto del responsable; no revisada por un abogado |
+| Aviso de versión nueva en la app de escritorio | Implementada (simulada); sale cuando se publique con el workflow nuevo | Pruebas con API simulada + versión por IPC comprobada con Electron real | Sin descarga/instalación automática |
+| Prueba de la APK firmada en un Android real (emulador API 36) | Hecha: instala, arranca, consentimiento, banner | `VALIDACION_ANDROID_EMULADOR.md` | No es un móvil físico |
 | Banner solo en el inicio | Implementada; margen calculado con el alto real de la barra inferior (ya no tapa la navegación) | Mock + medición en navegador real | Sin ver en un móvil físico |
 | Vídeo recompensado (+10 bytes, 3/día) | Implementada | Mock, SQL | Validado por el servidor (tope 3/24 h) |
 | Sin anuncios en niveles, jefes, retos ni resultados | Implementada | Mock | |

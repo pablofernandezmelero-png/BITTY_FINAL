@@ -1433,6 +1433,9 @@ function cloudCard(){if(!SBon())return"";
  ?`<p class="mut sm">${tt("Conectado como","Signed in as","Ingelogd als")} <b>${esc(AU.m)}</b></p><button class="btn" ${cbusy?"disabled":""} onclick="cnow()">${tt("Sincronizar ahora","Sync now","Nu synchroniseren")}</button><button class="lnk" onclick="cmsg='';bwnp()">${tt("Cambiar contraseña","Change password","Wachtwoord wijzigen")}</button><button class="lnk" onclick="cout()">${tt("Cerrar sesión","Sign out","Uitloggen")}</button><button class="lnk" onclick="cout(1)">${tt("Cerrar sesión en todos mis dispositivos","Sign out on all my devices","Uitloggen op al mijn apparaten")}</button>`+mfaCard()+`<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(128,128,128,.25)"><button class="lnk" ${cbusy?"disabled":""} onclick="cdel()">${tt("Eliminar mi cuenta y mis datos","Delete my account and data","Mijn account en gegevens verwijderen")}</button></div>`
  :`<p class="mut sm">${tt("Guarda tu progreso y juega desde cualquier dispositivo.","Save your progress and play from any device.","Bewaar je voortgang en speel op elk apparaat.")}</p><input id="cE" class="inp" type="email" autocomplete="email" maxlength="120" placeholder="email" value="${esc(cEm)}"><input id="cP" class="inp" type="password" autocomplete="current-password" maxlength="72" placeholder="${tt("contraseña (mín. 8)","password (min. 8)","wachtwoord (min. 8)")}" onkeydown="if(event.key=='Enter')cgo('i')"><button class="btn g" ${cbusy?"disabled":""} onclick="cgo('i')">${tt("Entrar","Sign in","Inloggen")}</button><button class="btn" style="margin-top:8px" ${cbusy?"disabled":""} onclick="cgo('s')">${tt("Crear cuenta","Create account","Account maken")}</button><button class="lnk" onclick="cgo('m')">${tt("Enviarme un enlace mágico","Email me a magic link","Stuur me een magische link")}</button>`)+m+`</div>`}
 {const p0=perfil;perfil=()=>p0()+cloudCard()}
+// Enlace a la política de privacidad (constante; se abre fuera de la app). Visible con o sin cuenta.
+const PRIV="https://pablofernandezmelero-png.github.io/BITTY_FINAL/privacidad/";
+{const p1=perfil;perfil=()=>p1()+`<p class="c sm" style="margin:16px 0 6px"><a id="privL" href="${PRIV}" target="_blank" rel="noopener noreferrer" style="color:var(--pri);font-weight:700">${tt("Política de privacidad","Privacy policy","Privacybeleid")}</a></p>`}
 addEventListener("visibilitychange",()=>{if(document.hidden&&ctm)cpush()});
 const MLK=/access_token=/.test(location.hash);
 try{AS=SBon()&&!AU&&!MLK&&!localStorage.getItem("bitty_guest")?1:0}catch(e){AS=0}
@@ -1537,7 +1540,7 @@ addEventListener("offline",offUI);addEventListener("online",()=>{offUI();if(AU&&
 // ---- Avisos de actualización: APK nueva (Android) y versión nueva de la web (PWA). Nunca instala ni recarga solo: solo avisa.
 // La última APK la publica GitHub Actions como Release «build-N» (N = versionCode). El enlace es una constante: nada de lo que
 // devuelve la API decide a dónde se va.
-const UPD={api:"https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/latest",page:"https://pablofernandezmelero-png.github.io/BITTY_FINAL/descargar/",every:12*36e5};
+const UPD={api:"https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/latest",apiDesk:"https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/tags/desktop-latest",page:"https://pablofernandezmelero-png.github.io/BITTY_FINAL/descargar/",every:12*36e5};
 function updBar(msg,okTxt,okFn,okHref,laterFn){
  const old=$("#upd");if(old)old.remove();
  const e=document.createElement("div");e.id="upd";e.setAttribute("role","status");
@@ -1552,14 +1555,16 @@ function updBar(msg,okTxt,okFn,okHref,laterFn){
  r.appendChild(o);e.appendChild(r);document.body.appendChild(e);return e}
 async function updCheck(){
  try{
-  const nat=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform(),A=nat&&Capacitor.Plugins&&Capacitor.Plugins.App;
-  if(!A||!A.getInfo||!navigator.onLine||adInLevel()||$("#upd"))return;
+  // Android (app nativa: versionCode) o escritorio (Electron: versión 1.0.N). En la web/PWA no se consulta nada.
+  const nat=window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform(),A=nat&&Capacitor.Plugins&&Capacitor.Plugins.App,D=window.bittyDesktop;
+  const desk=!A&&!!D&&D.isDesktop===true&&typeof D.version==="string"&&/^\d{1,3}\.\d{1,3}\.\d{1,6}$/.test(D.version);
+  if(!(A&&A.getInfo)&&!desk)return;if(!navigator.onLine||adInLevel()||$("#upd"))return;
   if(Date.now()-(+localStorage.getItem("bitty_upd_t")||0)<UPD.every)return;
-  const cur=parseInt((await A.getInfo()).build,10);if(!(cur>0))return;
+  const cur=desk?parseInt(D.version.split(".")[2],10):parseInt((await A.getInfo()).build,10);if(!(cur>0))return;
   const c=new AbortController(),to=setTimeout(()=>c.abort(),8000);
-  const r=await fetch(UPD.api,{headers:{Accept:"application/vnd.github+json"},credentials:"omit",referrerPolicy:"no-referrer",signal:c.signal});clearTimeout(to);
+  const r=await fetch(desk?UPD.apiDesk:UPD.api,{headers:{Accept:"application/vnd.github+json"},credentials:"omit",referrerPolicy:"no-referrer",signal:c.signal});clearTimeout(to);
   if(!r.ok)return;
-  const j=await r.json(),m=/^build-(\d{1,6})$/.exec(String(j&&j.tag_name||""));
+  const j=await r.json(),m=desk?/^Bitty para Windows \(build (\d{1,6})\)$/.exec(String(j&&j.name||"")):/^build-(\d{1,6})$/.exec(String(j&&j.tag_name||""));
   if(!m||j.draft||j.prerelease)return;
   localStorage.setItem("bitty_upd_t",String(Date.now()));
   const n=+m[1];if(n<=cur||localStorage.getItem("bitty_upd_skip")===String(n))return;

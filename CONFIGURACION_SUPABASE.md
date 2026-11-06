@@ -4,6 +4,24 @@ Guía para el propietario del proyecto. Nada de esto se ha aplicado todavía en 
 
 > Estado real comprobado el 2026-11-04 con la clave pública: existen `progress`, `profiles` y `stats` (con RLS que bloquea al usuario anónimo); **no existen** `xp_events`, `courses`, `categories`, `lessons`, `exercises`, `questions`, `answers` ni la función `award_xp`. Es decir, las migraciones 003–008 están **sin aplicar**.
 
+## 0. Antes de empezar: comprobar el estado real (solo lectura, no cambia nada)
+
+Pega esto en **SQL Editor → New query → Run**. Solo hace `select`. Sirve para confirmar que tu base de datos está como esta guía supone (001 y 002 aplicadas; 003–008 sin aplicar). Si algo no coincide, **no apliques nada** y dímelo.
+
+```sql
+-- Tablas que existen y si tienen RLS (esperado ahora: progress, profiles y stats, las tres con rowsecurity = true)
+select tablename, rowsecurity from pg_tables where schemaname = 'public' order by 1;
+-- Funciones propias (esperado ahora: solo las del perfil; sin award_xp, aal_ok, delete_my_account...)
+select proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' order by 1;
+-- Cuántos usuarios y con qué XP (anota estas cifras: tras las migraciones deben seguir igual)
+select count(*) as usuarios from auth.users;
+select user_id, xp, streak from public.stats order by xp desc;
+-- Políticas actuales de las tablas privadas
+select tablename, policyname, cmd from pg_policies where schemaname = 'public' order by 1, 2;
+```
+
+**Qué se ha probado ya (en un PostgreSQL embebido, no en tu Supabase):** las 8 migraciones se aplican desde cero; se pueden repetir sin cambiar nada; aplicadas sobre una copia de la estructura de producción **con usuarios y XP de ejemplo**, ningún dato de `progress`, `profiles` ni `stats` cambia, el XP existente pasa a `base_xp` y los usuarios existentes siguen guardando y cobrando XP; todas las tablas tienen RLS, las funciones `SECURITY DEFINER` fijan `search_path` y `anon` no puede ejecutar ninguna función ni escribir. **Lo que no se puede probar sin tu proyecto:** que `delete_my_account()` pueda borrar de `auth.users` en Supabase real, y el comportamiento con tus filas reales.
+
 ## 1. Orden de las migraciones
 
 Auditoría completa, veredicto por migración y hallazgos: [`AUDITORIA_MIGRACIONES.md`](AUDITORIA_MIGRACIONES.md). Se pegan en **SQL Editor → New query → Run**, una por una y en este orden. Todas son **aditivas** (no borran datos, no reinician el progreso). Las 003 a 008 se pueden repetir sin problema. **No repitas la 001 ni la 002 si ya las aplicaste**: no hace falta, y la versión antigua de la 001 daba el error «policy already exists» (inofensivo).
@@ -19,7 +37,7 @@ Auditoría completa, veredicto por migración y hallazgos: [`AUDITORIA_MIGRACION
 | 7 | `07_actividad_e_historial.sql` | Vista `activity_log` y tabla `question_history` con su función | 3, 4 | El cliente aún no usa `question_history` |
 | 8 | `08_eliminar_cuenta.sql` | `delete_my_account()`: el usuario borra su propia cuenta y todos sus datos (cascada) | 3, 7 | Botón «Eliminar mi cuenta» en el Perfil. No verificado con Supabase real: requiere que la función pueda borrar de `auth.users` (patrón habitual de Supabase) |
 
-**Orden de despliegue web ↔ migraciones:** la web de Pages ya tiene el cliente nuevo. **Instala la APK nueva antes de aplicar la 004**: los clientes antiguos dejan de poder escribir `stats` y, al actualizar, el servidor manda (el XP ganado con la versión antigua después de la 004 se perdería). Sin la 004, la app nueva guarda el XP en local y lo envía cuando exista la función.
+**Orden de despliegue web ↔ migraciones:** la web de Pages ya tiene el cliente nuevo, y la **APK firmada `build-1004` (publicada) ya lleva el cliente que usa `award_xp`**, así que esa condición se cumple en los móviles que tengan la 1004 o posterior (la de prueba `build-6` también lleva el cliente nuevo, pero no se actualiza encima). **Instala la APK nueva antes de aplicar la 004**: los clientes antiguos dejan de poder escribir `stats` y, al actualizar, el servidor manda (el XP ganado con la versión antigua después de la 004 se perdería). Sin la 004, la app nueva guarda el XP en local y lo envía cuando exista la función.
 
 ## 2. Comprobar que se aplicaron bien
 

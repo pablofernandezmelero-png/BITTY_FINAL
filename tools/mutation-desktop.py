@@ -23,6 +23,8 @@ M = [
  (D("main.js"), "se vuelve a mostrar el menú", 'Menu.setApplicationMenu(null);', ''),
  (D("preload.js"), "el preload expone ipcRenderer", 'isDesktop: true,', 'isDesktop: true, ipc: ipcRenderer,'),
  (D("preload.js"), "el preload reenvía cualquier URL", 'if (url === "bitty://confirmed") cb(url);', 'cb(url);'),
+ (D("main.js"), "main responde la versión a cualquier página", 'sec.isInternalUrl(e.senderFrame.url)) ? app.getVersion() : ""', 'true) ? app.getVersion() : ""'),
+ (D("preload.js"), "el preload no valida la versión recibida", r'/^\d{1,3}\.\d{1,3}\.\d{1,6}$/.test(v) ? v : ""', 'true ? v : ""'),
  (D("package.json"), "vuelve Electron 39 (con avisos altos)", '"electron": "^45.2.3"', '"electron": "^39.8.10"'),
  (D("package.json"), "el instalador deja de registrar bitty://", '"bitty"' + NL + '        ]', '"otro"' + NL + '        ]'),
 ]

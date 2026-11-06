@@ -58,6 +58,15 @@ ok(!JSON.stringify(pj).match(/"asar"\s*:\s*false/), "asar sin desactivar");
 ok(/node_modules/.test(fs.readFileSync(D(".gitignore"), "utf8")) && /dist/.test(fs.readFileSync(D(".gitignore"), "utf8")) && /www/.test(fs.readFileSync(D(".gitignore"), "utf8")), "desktop/.gitignore excluye node_modules, dist y la copia de www");
 ok(fs.existsSync(path.join(root, ".github", "workflows", "desktop-windows.yml")), "existe el workflow de compilación para Windows");
 
+// ---- aviso de versión nueva en el escritorio: versión 1.0.N expuesta de forma segura + Release con el número en el título
+ok(/ipcRenderer\.sendSync\("bitty-version"\)/.test(pre) && pre.includes("/^\\d{1,3}\\.\\d{1,3}\\.\\d{1,6}$/"), "preload: lee la versión por IPC y la valida (formato 1.0.N, vacío si no)");
+ok(/ipcMain\.on\("bitty-version"/.test(main) && /sec\.isInternalUrl\(e\.senderFrame\.url\)\) \? app\.getVersion\(\) : ""/.test(main), "main: responde la versión solo si la pregunta la propia app (app://bitty)");
+const wd = fs.readFileSync(path.join(root, ".github", "workflows", "desktop-windows.yml"), "utf8").replace(/\r\n/g, "\n");
+ok(/npm run dist -- --config\.extraMetadata\.version=1\.0\.\$\{\{ github\.run_number \}\}/.test(wd), "workflow: el instalador lleva la versión 1.0.<nº de ejecución>");
+ok(/gh release edit desktop-latest[^\n]*--title "Bitty para Windows \(build \$RUN_NUMBER\)" --latest=false/.test(wd), "workflow: la Release desktop-latest recibe el número de compilación en el título y no se marca «latest»");
+ok(/test -f "desktop\/dist\/Bitty-Setup-1\.0\.\$\{\{ github\.run_number \}\}\.exe"/.test(wd), "workflow: comprueba que existe el instalador de esa versión");
+ok(/res\.bittyVersion === require\("\.\.\/package\.json"\)\.version/.test(fs.readFileSync(D("scripts/smoke.js"), "utf8")), "la prueba con Electron real comprueba la versión recibida");
+
 // ---- icono de Windows: .ico real (varios tamaños, imágenes PNG) y referenciado desde electron-builder
 const ico = fs.existsSync(D("build/icon.ico")) ? fs.readFileSync(D("build/icon.ico")) : Buffer.alloc(0);
 ok(ico.length > 6 && ico.readUInt16LE(0) === 0 && ico.readUInt16LE(2) === 1, "desktop/build/icon.ico es un icono válido");

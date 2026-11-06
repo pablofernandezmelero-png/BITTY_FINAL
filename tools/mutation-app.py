@@ -3,7 +3,7 @@
 #   python tools/mutation-app.py
 import subprocess, os, sys
 root = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-H = os.path.join(root, "www", "index.html"); MF = os.path.join(root, "android", "app", "src", "main", "AndroidManifest.xml"); SW = os.path.join(root, "www", "sw.js"); DL = os.path.join(root, "www", "descargar", "index.html"); WA = os.path.join(root, ".github", "workflows", "android.yml"); GR = os.path.join(root, "android", "app", "build.gradle"); WR = os.path.join(root, ".github", "workflows", "android-release.yml")
+H = os.path.join(root, "www", "index.html"); MF = os.path.join(root, "android", "app", "src", "main", "AndroidManifest.xml"); SW = os.path.join(root, "www", "sw.js"); DL = os.path.join(root, "www", "descargar", "index.html"); WA = os.path.join(root, ".github", "workflows", "android.yml"); GR = os.path.join(root, "android", "app", "build.gradle"); WR = os.path.join(root, ".github", "workflows", "android-release.yml"); PV = os.path.join(root, "www", "privacidad", "index.html"); WD = os.path.join(root, ".github", "workflows", "desktop-windows.yml")
 M = [
  (H, "el registro deja de indicar la página de confirmación", 'k=="s"?"/auth/v1/signup"+RURLC():', 'k=="s"?"/auth/v1/signup":', "cloud"),
  (H, "el reenvío pierde la espera de 60 s", 'if(Date.now()-last<60000){cmsg=', 'if(false){cmsg=', "cloud"),
@@ -32,7 +32,7 @@ M = [
  (H, "el aviso acepta versiones preliminares", '||j.draft||j.prerelease)return;', ')return;', "update"),
  (H, "el aviso acepta cualquier etiqueta", '/^build-(\\d{1,6})$/.exec', '/(\\d+)/.exec', "update"),
  (H, "el enlace del aviso lo decide la API", 'null,UPD.page,()=>', 'null,j.html_url,()=>', "update"),
- (H, "el aviso se muestra también en la web (sin app)", 'A=nat&&Capacitor.Plugins&&Capacitor.Plugins.App;', 'A=Capacitor.Plugins&&Capacitor.Plugins.App;', "update"),
+ (H, "el aviso se muestra también en la web (sin app)", 'A=nat&&Capacitor.Plugins&&Capacitor.Plugins.App,D=', 'A=Capacitor.Plugins&&Capacitor.Plugins.App,D=', "update"),
  (H, "el aviso interrumpe un nivel", '||adInLevel()||$("#upd"))return;', '||$("#upd"))return;', "update"),
  (H, "el aviso consulta sin límite de frecuencia", 'if(Date.now()-(+localStorage.getItem("bitty_upd_t")||0)<UPD.every)return;', '', "update"),
  (H, "«Más tarde» no se recuerda", 'localStorage.setItem("bitty_upd_skip",String(n))', '0', "update"),
@@ -58,6 +58,16 @@ M = [
  (H, "la zona de contenido no reserva el espacio del banner", 'padding:16px 16px calc(16px + var(--adh,0px))', 'padding:16px', "android"),
  (H, "el banner cambia el tamaño original de AdMob", 'adSize:"ADAPTIVE_BANNER"', 'adSize:"BANNER"', "android"),
  (H, "al ocultar el banner no se libera el espacio", 'adBan=0;adSpace(0);await P.hideBanner()', 'adBan=0;await P.hideBanner()', "android"),
+ (H, "el enlace de privacidad de la app apunta a otro sitio", 'const PRIV="https://pablofernandezmelero-png.github.io/BITTY_FINAL/privacidad/";', 'const PRIV="https://pablofernandezmelero-png.github.io/BITTY_FINAL/privacidad-x/";', "privacy"),
+ (H, "el enlace de privacidad pierde noopener", 'target="_blank" rel="noopener noreferrer" style="color:var(--pri);font-weight:700"', 'target="_blank" style="color:var(--pri);font-weight:700"', "privacy"),
+ (PV, "la política deja de decir dónde eliminar la cuenta (español)", 'desde Perfil → «Eliminar mi cuenta y mis datos»', 'desde Ajustes', "privacy"),
+ (PV, "la política afirma algo falso sobre la copia de seguridad", 'En Android, la copia de seguridad automática está desactivada.', 'En Android, la copia de seguridad es automática.', "privacy"),
+ (PV, "la política carga recursos externos", "img-src 'self' data:;", "img-src 'self' data: https:; connect-src https:;", "privacy"),
+ (H, "el escritorio consulta la Release de Android", 'desk?UPD.apiDesk:UPD.api', 'UPD.api', "update"),
+ (H, "el escritorio acepta cualquier título de Release", r'/^Bitty para Windows \(build (\d{1,6})\)$/', r'/(\d+)/', "update"),
+ (H, "el escritorio acepta una versión instalada con formato raro", r'/^\d{1,3}\.\d{1,3}\.\d{1,6}$/.test(D.version)', 'true', "update"),
+ (WD, "el instalador de Windows deja de llevar el número de compilación", '--config.extraMetadata.version=1.0.${{ github.run_number }}', '', "desktop"),
+ (WD, "la Release de Windows deja de llevar el número en el título", '--title "Bitty para Windows (build $RUN_NUMBER)"', '--title "Bitty para Windows"', "desktop"),
  (H, "falta el icono de iPhone", '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">', '', "pwa"),
 ]
 bad = 0

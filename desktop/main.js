@@ -1,7 +1,7 @@
 "use strict";
 // Bitty para escritorio (Electron). Carga la web desde el protocolo propio app://bitty (archivos de ./www, nunca rutas
 // absolutas) con el renderizador aislado: sin Node, con sandbox, sin menú, permisos denegados y navegación bloqueada.
-const { app, BrowserWindow, protocol, net, shell, session, Menu } = require("electron");
+const { app, BrowserWindow, protocol, net, shell, session, Menu, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { pathToFileURL } = require("url");
@@ -13,6 +13,9 @@ const SMOKE = process.env.BITTY_SMOKE === "1";            // modo de comprobaci�
 protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 
 let win = null, pendingDeep = sec.deepLinkFromArgv(process.argv);
+
+// Versión de esta instalación (1.0.N, N = compilación): la web la usa para avisar de una versión nueva. Solo se responde a la propia app (app://bitty).
+ipcMain.on("bitty-version", e => { e.returnValue = (e.senderFrame && sec.isInternalUrl(e.senderFrame.url)) ? app.getVersion() : ""; });
 
 function sendDeep(url) {
   if (win && !win.webContents.isLoading()) win.webContents.send("bitty-deep", url);
@@ -89,7 +92,7 @@ function runSmoke() {
       const facts = await wc.executeJavaScript(`(function(){
         const r={href:location.href,title:document.title,lang:document.documentElement.lang,
           hasRequire:typeof require,hasProcess:typeof process,hasModule:typeof module,
-          bitty:Object.keys(window.bittyDesktop||{}).sort(),isDesktop:!!(window.bittyDesktop&&window.bittyDesktop.isDesktop),
+          bitty:Object.keys(window.bittyDesktop||{}).sort(),bittyVersion:String((window.bittyDesktop||{}).version||""),isDesktop:!!(window.bittyDesktop&&window.bittyDesktop.isDesktop),
           loginVisible:!!document.querySelector("#cE"),
           cspMeta:!!document.querySelector('meta[http-equiv="Content-Security-Policy"]'),
           storage:(function(){try{localStorage.setItem("smoke","1");const ok=localStorage.getItem("smoke")==="1";localStorage.removeItem("smoke");return ok}catch(e){return false}})()};

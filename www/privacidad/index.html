@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#6d4aff">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<title>Privacidad · Bitty</title>
+<style>
+:root{--bg:#f4f3ff;--fg:#241b5c;--mut:#665f92;--card:#fff;--line:#e3e0f5;--pri:#6d4aff;--pri2:#ff4d8d}
+@media(prefers-color-scheme:dark){:root{--bg:#140e2a;--fg:#f5f0ff;--mut:#a79bd0;--card:#221a44;--line:#3a2d6b}}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:500 16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:max(20px,env(safe-area-inset-top)) 16px max(28px,env(safe-area-inset-bottom))}
+main{max-width:720px;margin:0 auto}
+header{display:flex;align-items:center;gap:12px;margin-bottom:8px}header img{width:48px;height:48px;border-radius:12px}
+h1{margin:0;font-size:26px}h2{margin:26px 0 6px;font-size:19px}
+.lang{display:flex;gap:6px;margin:12px 0 4px}.lang button{font:inherit;font-weight:700;font-size:13px;border:2px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:5px 10px;cursor:pointer}.lang button[aria-pressed=true]{border-color:var(--pri);color:var(--pri)}
+p,li{color:var(--fg)}.mut{color:var(--mut);font-size:14px}ul{padding-left:20px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:4px 18px 14px;margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+a{color:var(--pri)}a:focus-visible,button:focus-visible{outline:3px solid var(--pri2);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+<header><img src="../icons/icon-192.png" alt="" width="48" height="48"><h1 id="h1"></h1></header>
+<div class="lang" role="group" aria-label="Idioma / Language / Taal"><button data-l="es">Español</button><button data-l="en">English</button><button data-l="nl">Nederlands</button></div>
+<p class="mut" id="upd"></p>
+<div id="doc"></div>
+</main>
+<script>
+"use strict";
+// Política de privacidad de Bitty. Describe lo que la aplicación hace según su código (sin cookies de seguimiento, sin analítica propia).
+// PENDIENTE del responsable: identidad y correo privado de contacto (ver el apartado «Responsable»).
+var ISSUES="https://github.com/pablofernandezmelero-png/BITTY_FINAL/issues";
+var T={
+es:{h1:"Política de privacidad",upd:"Última actualización: 5 de noviembre de 2026. Versión preliminar: el responsable debe revisarla y completar sus datos de contacto antes de publicar la aplicación en tiendas.",s:[
+["Qué es Bitty","Bitty es una aplicación educativa para aprender informática. Puede usarse como invitado (sin cuenta) o con una cuenta para guardar el progreso en la nube."],
+["Responsable","Responsable del tratamiento: el titular del proyecto Bitty (repositorio pablofernandezmelero-png/BITTY_FINAL). Contacto provisional: una incidencia pública en <a href=\""+ISSUES+"\" rel=\"noopener noreferrer\">GitHub</a> (no incluyas datos personales en ella). <b>Pendiente:</b> el responsable debe añadir aquí su nombre y un correo privado de contacto."],
+["Qué datos tratamos","TABLE"],
+["Modo invitado","Si juegas como invitado, tu progreso se guarda solo en tu dispositivo. No enviamos nada a ningún servidor propio."],
+["Cuenta y nube","Al crear una cuenta, el correo y la contraseña los gestiona el servicio de autenticación de Supabase (la contraseña se guarda cifrada con hash, nunca en claro ni en tablas propias). Tu progreso (puntos, nivel, racha, estadísticas e historial de preguntas) se guarda en una base de datos de Supabase protegida con seguridad por filas: cada usuario solo puede leer y modificar sus propios datos."],
+["Publicidad (solo Android)","La app de Android puede mostrar anuncios de Google AdMob. Si la normativa lo exige, antes se te pide tu consentimiento con un formulario; puedes rechazarlo. Con tu consentimiento, Google puede usar identificadores del dispositivo (p. ej. el identificador de publicidad) para personalizar y medir los anuncios. En las versiones de prueba se usan anuncios de prueba de Google. La web, el iPhone y la versión de Windows no muestran anuncios."],
+["Servicios de terceros","Para funcionar, la app se conecta a: <b>Supabase</b> (cuentas y progreso), <b>GitHub</b> (alojamiento de la web y consulta de la última versión; recibe tu dirección IP) y <b>Google Fonts</b> (tipografías; Google recibe tu dirección IP). No usamos analítica propia ni cookies de seguimiento."],
+["Dónde se guarda en tu dispositivo","El progreso, el idioma y la sesión se guardan en el almacenamiento local de la aplicación o del navegador (localStorage). En Android, la copia de seguridad automática está desactivada."],
+["Cuánto tiempo","Los datos de la cuenta se conservan mientras exista la cuenta. Al eliminarla se borran los datos de la nube."],
+["Tus derechos","Puedes acceder a tus datos (están visibles en la propia app), rectificarlos, y <b>eliminar tu cuenta y todos tus datos de la nube desde Perfil → «Eliminar mi cuenta y mis datos»</b>. También puedes cambiar la contraseña, activar la verificación en dos pasos y cerrar la sesión en todos tus dispositivos. Para otros derechos (portabilidad, oposición, limitación) contacta con el responsable. Tienes derecho a reclamar ante la autoridad de control de protección de datos de tu país."],
+["Menores","Bitty no solicita la edad ni datos de menores. Si eres menor, usa la aplicación con el conocimiento de tus padres o tutores. <b>Pendiente:</b> el responsable debe decidir el público objetivo, porque afecta a la publicidad y a las normas de las tiendas."],
+["Seguridad","Conexiones cifradas (HTTPS), seguridad por filas en la base de datos, validación de recompensas en el servidor, sin claves secretas en la aplicación y tokens de confirmación que no se guardan."],
+["Cambios","Si esta política cambia, se actualizará esta página y su fecha."]],
+ tb:[["Dato","Para qué","Dónde"],["Correo electrónico (si creas cuenta)","Iniciar sesión, confirmar y recuperar la cuenta","Supabase"],["Progreso: puntos, nivel, racha, estadísticas, historial de preguntas","Guardar tu avance y sincronizarlo","Tu dispositivo; Supabase si tienes cuenta"],["Idioma, dificultad y ajustes","Recordar tus preferencias","Tu dispositivo"],["Dirección IP y datos técnicos de la conexión","Funcionamiento de la conexión","Supabase, GitHub, Google Fonts (y Google AdMob en Android)"],["Identificadores de publicidad (solo Android, con tu consentimiento)","Mostrar y medir anuncios","Google AdMob"]]},
+en:{h1:"Privacy policy",upd:"Last updated: 5 November 2026. Draft version: the controller must review it and add their contact details before the app is published in stores.",s:[
+["What Bitty is","Bitty is an educational app for learning computer science. You can use it as a guest (no account) or with an account to save your progress in the cloud."],
+["Controller","Data controller: the owner of the Bitty project (repository pablofernandezmelero-png/BITTY_FINAL). Provisional contact: a public issue on <a href=\""+ISSUES+"\" rel=\"noopener noreferrer\">GitHub</a> (do not include personal data in it). <b>Pending:</b> the controller must add their name and a private contact email here."],
+["What data we process","TABLE"],
+["Guest mode","If you play as a guest, your progress is stored only on your device. Nothing is sent to any server of ours."],
+["Account and cloud","When you create an account, your email and password are handled by Supabase Authentication (the password is stored as a hash, never in clear text or in our own tables). Your progress (points, level, streak, statistics and question history) is stored in a Supabase database protected by row-level security: each user can only read and change their own data."],
+["Advertising (Android only)","The Android app may show Google AdMob ads. Where the law requires it, you are first asked for consent with a form; you can refuse. With your consent, Google may use device identifiers (e.g. the advertising ID) to personalise and measure ads. Test builds use Google's test ads. The web, iPhone and Windows versions show no ads."],
+["Third-party services","To work, the app connects to: <b>Supabase</b> (accounts and progress), <b>GitHub</b> (web hosting and checking the latest version; receives your IP address) and <b>Google Fonts</b> (typefaces; Google receives your IP address). We use no analytics of our own and no tracking cookies."],
+["Where it is stored on your device","Progress, language and session are stored in the app's or browser's local storage (localStorage). On Android, automatic backup is disabled."],
+["How long","Account data is kept while the account exists. Deleting it removes the cloud data."],
+["Your rights","You can access your data (it is visible in the app), correct it, and <b>delete your account and all your cloud data from Profile → “Delete my account and my data”</b>. You can also change your password, enable two-step verification and sign out of all your devices. For other rights (portability, objection, restriction) contact the controller. You have the right to complain to your country's data protection authority."],
+["Children","Bitty does not ask for age or children's data. If you are a minor, use the app with your parents' or guardians' knowledge. <b>Pending:</b> the controller must decide the target audience, as it affects advertising and store rules."],
+["Security","Encrypted connections (HTTPS), row-level security in the database, rewards validated on the server, no secret keys in the app, and confirmation tokens that are not stored."],
+["Changes","If this policy changes, this page and its date will be updated."]],
+ tb:[["Data","Purpose","Where"],["Email address (if you create an account)","Sign in, confirm and recover the account","Supabase"],["Progress: points, level, streak, statistics, question history","Save your progress and sync it","Your device; Supabase if you have an account"],["Language, difficulty and settings","Remember your preferences","Your device"],["IP address and technical connection data","Making the connection work","Supabase, GitHub, Google Fonts (and Google AdMob on Android)"],["Advertising identifiers (Android only, with your consent)","Show and measure ads","Google AdMob"]]},
+nl:{h1:"Privacybeleid",upd:"Laatst bijgewerkt: 5 november 2026. Conceptversie: de verantwoordelijke moet het nakijken en zijn contactgegevens toevoegen voordat de app in winkels wordt gepubliceerd.",s:[
+["Wat is Bitty","Bitty is een educatieve app om informatica te leren. Je kunt hem als gast gebruiken (zonder account) of met een account om je voortgang in de cloud te bewaren."],
+["Verantwoordelijke","Verwerkingsverantwoordelijke: de eigenaar van het Bitty-project (repository pablofernandezmelero-png/BITTY_FINAL). Voorlopig contact: een openbaar issue op <a href=\""+ISSUES+"\" rel=\"noopener noreferrer\">GitHub</a> (zet er geen persoonsgegevens in). <b>Nog te doen:</b> de verantwoordelijke moet hier zijn naam en een privé-e-mailadres toevoegen."],
+["Welke gegevens we verwerken","TABLE"],
+["Gastmodus","Als je als gast speelt, wordt je voortgang alleen op je apparaat bewaard. Er wordt niets naar een eigen server gestuurd."],
+["Account en cloud","Bij het aanmaken van een account worden je e-mailadres en wachtwoord beheerd door Supabase Authentication (het wachtwoord wordt als hash bewaard, nooit leesbaar en niet in eigen tabellen). Je voortgang (punten, niveau, reeks, statistieken en vraaggeschiedenis) staat in een Supabase-database met beveiliging per rij: elke gebruiker kan alleen zijn eigen gegevens lezen en wijzigen."],
+["Advertenties (alleen Android)","De Android-app kan Google AdMob-advertenties tonen. Waar de wet dat vereist, wordt eerst met een formulier om toestemming gevraagd; je mag weigeren. Met je toestemming kan Google apparaat-ID's (bijv. het advertentie-ID) gebruiken om advertenties te personaliseren en te meten. Testversies gebruiken testadvertenties van Google. De web-, iPhone- en Windows-versie tonen geen advertenties."],
+["Diensten van derden","Om te werken maakt de app verbinding met: <b>Supabase</b> (accounts en voortgang), <b>GitHub</b> (hosting van het web en controle op de nieuwste versie; ontvangt je IP-adres) en <b>Google Fonts</b> (lettertypen; Google ontvangt je IP-adres). We gebruiken geen eigen analyse en geen trackingcookies."],
+["Waar het op je apparaat staat","Voortgang, taal en sessie staan in de lokale opslag van de app of browser (localStorage). Op Android is de automatische back-up uitgeschakeld."],
+["Hoe lang","Accountgegevens worden bewaard zolang het account bestaat. Bij verwijdering worden de cloudgegevens gewist."],
+["Je rechten","Je kunt je gegevens inzien (ze zijn zichtbaar in de app), corrigeren en <b>je account en al je cloudgegevens verwijderen via Profiel → “Mijn account en gegevens verwijderen”</b>. Je kunt ook je wachtwoord wijzigen, tweestapsverificatie inschakelen en op al je apparaten uitloggen. Voor andere rechten (overdraagbaarheid, bezwaar, beperking) neem je contact op met de verantwoordelijke. Je hebt het recht een klacht in te dienen bij de gegevensbeschermingsautoriteit van je land."],
+["Minderjarigen","Bitty vraagt niet naar leeftijd of gegevens van kinderen. Ben je minderjarig, gebruik de app dan met medeweten van je ouders of voogden. <b>Nog te doen:</b> de verantwoordelijke moet de doelgroep bepalen, want die beïnvloedt advertenties en winkelregels."],
+["Beveiliging","Versleutelde verbindingen (HTTPS), beveiliging per rij in de database, beloningen gevalideerd op de server, geen geheime sleutels in de app en bevestigingstokens die niet worden bewaard."],
+["Wijzigingen","Als dit beleid verandert, worden deze pagina en de datum bijgewerkt."]],
+ tb:[["Gegeven","Doel","Waar"],["E-mailadres (als je een account maakt)","Inloggen, bevestigen en account herstellen","Supabase"],["Voortgang: punten, niveau, reeks, statistieken, vraaggeschiedenis","Je voortgang bewaren en synchroniseren","Je apparaat; Supabase als je een account hebt"],["Taal, moeilijkheid en instellingen","Je voorkeuren onthouden","Je apparaat"],["IP-adres en technische verbindingsgegevens","De verbinding laten werken","Supabase, GitHub, Google Fonts (en Google AdMob op Android)"],["Advertentie-ID's (alleen Android, met je toestemming)","Advertenties tonen en meten","Google AdMob"]]}
+};
+var lang="es";try{var nl=(navigator.language||"es").slice(0,2).toLowerCase();if(T[nl])lang=nl;var sv=localStorage.getItem("bitty_pv_lang");if(T[sv])lang=sv}catch(e){}
+var $=function(s){return document.querySelector(s)};
+function el(tag,txt){var e=document.createElement(tag);if(txt!==undefined)e.textContent=txt;return e}
+// Los textos de arriba son literales de este archivo (no vienen de la red): solo ellos pueden llevar <b> y <a> (se insertan como HTML).
+function render(){var t=T[lang],doc=$("#doc");document.documentElement.lang=lang;document.title=t.h1+" · Bitty";$("#h1").textContent=t.h1;$("#upd").textContent=t.upd;doc.textContent="";
+ document.querySelectorAll(".lang button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.l===lang))});
+ t.s.forEach(function(s){var c=el("section");c.className="card";c.appendChild(el("h2",s[0]));
+  if(s[1]==="TABLE"){var tb=el("table"),h=el("tr");t.tb[0].forEach(function(x){h.appendChild(el("th",x))});tb.appendChild(h);t.tb.slice(1).forEach(function(r){var tr=el("tr");r.forEach(function(x){tr.appendChild(el("td",x))});tb.appendChild(tr)});c.appendChild(tb)}
+  else{var p=el("p");p.innerHTML=s[1];c.appendChild(p)}
+  doc.appendChild(c)})}
+document.querySelectorAll(".lang button").forEach(function(b){b.onclick=function(){lang=b.dataset.l;try{localStorage.setItem("bitty_pv_lang",lang)}catch(e){}render()}});
+render();
+</script>
+</body>
+</html>

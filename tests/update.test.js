@@ -7,6 +7,7 @@ let n = 0, fails = 0;
 const ok = (c, m) => { n++; if (!c) { fails++; console.log("  FALLA: " + m); } };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const PAGE = "https://pablofernandezmelero-png.github.io/BITTY_FINAL/descargar/";
+const APID = "https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/tags/desktop-latest";
 const API = "https://api.github.com/repos/pablofernandezmelero-png/BITTY_FINAL/releases/latest";
 const appHtml = fs.readFileSync(path.join(root, "www", "index.html"), "utf8")
   .replace(/const SB={[^}]*};/, 'const SB={url:"https://abc.supabase.co",key:"k".repeat(30)};').replace(/<link[^>]*fonts.googleapis[^>]*>/g, "");
@@ -21,7 +22,8 @@ function boot(o) {
       w.Element.prototype.scrollIntoView = () => {};
       Object.defineProperty(w.navigator, "language", { value: o.lang || "es-ES", configurable: true });
       w.HTMLCanvasElement.prototype.getContext = () => new Proxy({}, { get: () => () => {}, set: () => true });
-      w.fetch = async (u, init) => { calls.push({ u: String(u), init }); if (String(u) === API && o.rel) { if (o.rel === "throw") throw new TypeError("net"); const r = typeof o.rel === "function" ? o.rel() : o.rel; return { ok: r.status ? r.status < 400 : true, status: r.status || 200, json: async () => r.body !== undefined ? r.body : r }; } return { ok: false, status: 404, json: async () => ({}) }; };
+      w.fetch = async (u, init) => { calls.push({ u: String(u), init }); if (String(u) === APID && o.relDesk) { const r = o.relDesk; return { ok: true, status: 200, json: async () => r }; } if (String(u) === API && o.rel) { if (o.rel === "throw") throw new TypeError("net"); const r = typeof o.rel === "function" ? o.rel() : o.rel; return { ok: r.status ? r.status < 400 : true, status: r.status || 200, json: async () => r.body !== undefined ? r.body : r }; } return { ok: false, status: 404, json: async () => ({}) }; };
+      if (o.desk) w.bittyDesktop = Object.freeze({ isDesktop: true, platform: "win32", version: o.desk, onDeepLink() {} });
       if (o.native !== false) w.Capacitor = { isNativePlatform: () => o.native !== "web", Plugins: { App: { addListener() {}, getInfo: async () => ({ build: String(o.build == null ? 3 : o.build), version: "1.0" }) } } };
       if (sw) { sw.addEventListener = (t, f) => sw.on(t, f); Object.defineProperty(w.navigator, "serviceWorker", { value: sw, configurable: true }); }
       w.localStorage.setItem("bitty_guest", "1");
@@ -83,6 +85,22 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
   x = boot({ build: 3, rel: rel("build-9") }); await sleep(100);
   x.w.document.body.insertAdjacentHTML("beforeend", '<button onclick="xq()">salir</button>'); await x.w.eval("updCheck()");
   ok(!x.bar() && !x.calls.some(c => c.u === API), "no interrumpe un nivel en curso");
+
+  // ---- app de escritorio (Electron): versión 1.0.N frente al título «Bitty para Windows (build N)» de la Release desktop-latest
+  const dRel = n => ({ tag_name: "desktop-latest", name: "Bitty para Windows (build " + n + ")", draft: false, prerelease: false });
+  x = boot({ native: false, desk: "1.0.5", relDesk: dRel(9) }); await sleep(100); await x.w.eval("updCheck()");
+  ok(!!x.bar() && /\(versión 9\)/.test(x.bar().textContent), "escritorio: la 1.0.5 instalada y la build 9 publicada → aviso con la versión 9");
+  ok(x.calls.some(c => c.u === APID) && !x.calls.some(c => c.u === API), "escritorio: consulta la Release desktop-latest (no la de Android)");
+  ok(x.w.document.querySelector("#updOk").href === PAGE && x.w.document.querySelector("#updOk").target === "_blank", "escritorio: «Descargar» abre la página de descargas (constante) fuera de la app");
+  for (const [name, o] of [["misma versión", { desk: "1.0.9", relDesk: dRel(9) }], ["instalada más nueva", { desk: "1.0.12", relDesk: dRel(9) }],
+    ["versión de desarrollo 1.0.0", { desk: "1.0.0", relDesk: dRel(9) }], ["título antiguo sin número", { desk: "1.0.5", relDesk: { name: "Bitty para Windows (ultimo instalador)" } }],
+    ["título manipulado", { desk: "1.0.5", relDesk: { name: "Bitty para Windows (build 9) <img src=x onerror=alert(1)>" } }], ["borrador", { desk: "1.0.5", relDesk: Object.assign(dRel(9), { draft: true }) }],
+    ["versión instalada con formato raro", { desk: "1.0.5-beta", relDesk: dRel(9) }], ["versión desmesurada", { desk: "1.0.5", relDesk: dRel(99999999) }]]) {
+    const y = boot(Object.assign({ native: false }, o)); await sleep(100); await y.w.eval("updCheck()"); ok(!y.bar() && y.errs.length === 0, "escritorio: sin aviso con: " + name); }
+  x = boot({ native: false, desk: "1.0.5", relDesk: dRel(9) }); await sleep(100); x.w.eval("bittyDesktop.isDesktop"); 
+  ok(Object.isFrozen(x.w.bittyDesktop), "escritorio: la API expuesta sigue congelada");
+  x = boot({ native: false, relDesk: dRel(9) }); await sleep(100); await x.w.eval("updCheck()");
+  ok(!x.bar() && !x.calls.some(c => c.u === APID || c.u === API), "web/PWA (sin app ni escritorio): no se consulta nada");
 
   // ---- idiomas
   x = boot({ build: 3, rel: rel("build-5"), lang: "en-US" }); await sleep(100); await x.w.eval("updCheck()");
@@ -158,7 +176,7 @@ const rel = (tag, x = {}) => Object.assign({ tag_name: tag, draft: false, prerel
   ok(!/versionCode \(/.test(gradle), "gradle: sin la sintaxis ambigua «versionCode (…)» que rompió el workflow");
   ok(/^def bittyVersionCode/m.test(gradle) && gradle.indexOf("def bittyVersionCode") < gradle.indexOf("android {"), "gradle: la variable se define antes del bloque android");
   ok(/desktop-latest[\s\S]*--latest=false[\s\S]*--clobber/.test(wf("desktop-windows.yml")) && /Bitty-Setup\.exe/.test(wf("desktop-windows.yml")), "el instalador de Windows se publica en desktop-latest sin quitar «latest» a la APK");
-  ok(/\bgh release create\b/.test(wf("android.yml")) && !/gh release (delete|edit)/.test(wf("android.yml") + wf("android-release.yml") + wf("desktop-windows.yml")), "los workflows nunca borran ni editan Releases ajenas");
+  ok(/\bgh release create\b/.test(wf("android.yml")) && !/gh release (delete|edit(?! desktop-latest))/.test(wf("android.yml") + wf("android-release.yml") + wf("desktop-windows.yml")), "los workflows nunca borran ni editan Releases ajenas");
   ok(/paths:[\s\S]*www\/\*\*/.test(wf("pages.yml")), "la página /descargar/ se publica sola con www/**");
 
   console.log(`update.test: ${n - fails}/${n} comprobaciones correctas`);

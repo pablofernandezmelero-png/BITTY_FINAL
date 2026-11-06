@@ -14,7 +14,8 @@ let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.log("  FALLA: "
 ok(!res.error, "sin error interno " + (res.error || ""));
 ok(/^app:\/\/bitty\/index\.html/.test(res.href), "carga desde app://bitty (no file://)");
 ok(res.hasRequire === "undefined" && res.hasProcess === "undefined" && res.hasModule === "undefined", "el renderizador NO tiene require/process/module (sin Node)");
-ok(res.isDesktop && JSON.stringify(res.bitty) === JSON.stringify(["isDesktop", "onDeepLink", "platform"]), "solo se expone bittyDesktop {isDesktop, onDeepLink, platform}");
+ok(res.isDesktop && JSON.stringify(res.bitty) === JSON.stringify(["isDesktop", "onDeepLink", "platform", "version"]), "solo se expone bittyDesktop {isDesktop, onDeepLink, platform, version}");
+ok(res.bittyVersion === require("../package.json").version, "la web recibe la versión instalada por el canal seguro (IPC solo desde app://bitty): " + res.bittyVersion);
 ok(res.storage, "localStorage funciona (el progreso se conserva)");
 ok(res.cspMeta, "la CSP de la web está activa");
 ok(res.loginVisible && res.guest === true, "la pantalla de acceso se muestra y el modo invitado funciona");

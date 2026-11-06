@@ -53,11 +53,11 @@ jobs:
         working-directory: desktop
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npm run dist
+        run: npm run dist -- --config.extraMetadata.version=1.0.${{ github.run_number }}
 
       - name: Comprobar que existe el instalador
         shell: bash
-        run: test -f desktop/dist/Bitty-Setup-1.0.0.exe
+        run: test -f "desktop/dist/Bitty-Setup-1.0.${{ github.run_number }}.exe"
 
       - name: Subir el instalador como Artifact
         uses: actions/upload-artifact@v4
@@ -72,7 +72,10 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
           cp desktop/dist/Bitty-Setup-*.exe Bitty-Setup.exe
           gh release view desktop-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || gh release create desktop-latest --repo "$GITHUB_REPOSITORY" --latest=false --title "Bitty para Windows (ultimo instalador)" --notes "Ultimo instalador de Windows de Bitty (sin firmar). Se reemplaza en cada publicacion."
           gh release upload desktop-latest Bitty-Setup.exe --repo "$GITHUB_REPOSITORY" --clobber
+          # El titulo lleva el numero de compilacion: la app de escritorio lo lee para avisar de una version nueva.
+          gh release edit desktop-latest --repo "$GITHUB_REPOSITORY" --title "Bitty para Windows (build $RUN_NUMBER)" --latest=false

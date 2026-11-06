@@ -78,7 +78,7 @@ Nuevas protecciones verificadas: la página de confirmación **no guarda ni deja
 | **CORS / redirecciones** | La URL de retorno de los correos es una constante o el origen web; sin parámetros de redirección controlables |
 | **RLS** (SQL) | Todas las tablas con RLS; ninguna política de escritura para `anon`; políticas restrictivas de AAL2 en todas las tablas privadas; vistas con `security_invoker`; claves ajenas con cascada |
 | **Android** | `allowBackup=false` + reglas de extracción, `usesCleartextTraffic=false`, sin *deep links*, `MainActivity` sin código propio, `exported` solo en la actividad de lanzamiento, `FileProvider` no exportado. Permisos propios: solo `INTERNET`; el plugin de anuncios añade `ACCESS_NETWORK_STATE` y el SDK sus propios permisos (no se pudo ver el manifiesto fusionado) |
-| **GitHub Actions** | Permisos mínimos (`contents: read`; Pages con los suyos), secretos solo en el workflow de release y nunca impresos, el release se detiene si faltan |
+| **GitHub Actions** | Permisos mínimos (`contents: write` solo en los 3 workflows de compilación, porque crean la Release y solo si marcas `publish_release`; Pages con los suyos), secretos solo en el workflow de release y nunca impresos, el release se detiene si faltan |
 
 ## D. No verificable (y por qué)
 
@@ -87,3 +87,8 @@ Nuevas protecciones verificadas: la página de confirmación **no guarda ni deja
 - Manifiesto Android fusionado y comportamiento de `FileProvider`/WebView en un dispositivo: requieren inspeccionar la APK o instalarla.
 - Concurrencia real del bloqueo por usuario: el entorno de pruebas tiene una sola conexión.
 - Fugas de memoria y comportamiento del WebView en móviles modestos.
+
+## E. Dependencias (comprobado el 6 de noviembre de 2026)
+
+- **Raíz** (`npm audit`, con y sin desarrollo): **0 vulnerabilidades**.
+- **Escritorio** (`desktop/`): **6 moderadas, todas de desarrollo** (cadena de `electron-builder`: `minimatch` con posible denegación de servicio al leer patrones de archivos). **No van dentro de la aplicación instalada** (son `devDependencies` que solo se ejecutan al compilar). `electron-builder` ya está en su última versión (26.18.0) y la «solución» que propone `npm audit` es bajar a la 25.1.0, que es peor; se acepta el riesgo hasta que salga un parche. Electron 45.2.3 sin avisos.
